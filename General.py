@@ -265,6 +265,13 @@ class Vec2:
 			except AttributeError:
 				print("AttributeError")
 
+	def RotateRadians(self, angle):
+		return ((self.x * cos(angle) + self.y * sin(angle)), (-self.x * sin(angle) + self.y * cos(angle)))
+
+	def RotateDegrees(self, angle):
+		angle = radians(angle)
+		return ((self.x * cos(angle) + self.y * sin(angle)), (-self.x * sin(angle) + self.y * cos(angle)))
+
 
 class Vec3(Vec2):
 	def __init__(self, x, y, z):
@@ -286,13 +293,16 @@ class Timer:
 	def Start(self):
 		self.startTime = dt.datetime.now()
 
-	def Stop(self, log=None, extraData={}):
+	def Stop(self, log=None, extraData={}, printResult=True):
 		self.endTime = dt.datetime.now()
 		difference = self.endTime - self.startTime
 
-		print(f"Start time: {self.startTime}, end time: {self.endTime}, difference: {difference}")
-		for key in extraData:
-			print(f"{key}: {extraData[key]}")
+		if printResult:
+			print(f"Start time: {self.startTime}, end time: {self.endTime}, difference: {difference}")
+			for key in extraData:
+				print(f"{key}: {extraData[key]}")
+
+		return (self.startTime, self.endTime, difference)
 
 		self.LogResults(log, extraData)
 
@@ -345,7 +355,7 @@ class Timer:
 					file.close()
 
 	# arg 'function' takes a 'Func' or a 'sequence'
-	def Record(self, function, log=None, extraData={}, *args, **kwargs):
+	def Record(self, function, log=None, extraData={}, printResult=True, *args, **kwargs):
 		self.Start()
 
 		if isinstance(function, Func):
@@ -356,7 +366,27 @@ class Timer:
 		else:
 			Func(function, *args, **kwargs)()
 
-		self.Stop(log=log, extraData=extraData)
+		return self.Stop(log=log, extraData=extraData, printResult=printResult)
+
+	def GetAverage(self, function, numOfIterations, log=None, extraData={}, printAllResults=False, printResult=True, *args, **kwargs):
+		totalDifference = 0
+		startTime = dt.datetime.now()
+		for i in range(numOfIterations):
+			result = self.Record(function, log, extraData, printResult=printAllResults, *args, **kwargs)[2]
+			difference = float(f"{result.seconds}.{result.microseconds}")
+			totalDifference += difference
+
+
+		endTime = dt.datetime.now()
+
+		average = totalDifference / numOfIterations
+
+		if printResult:
+			print(f"Start time: {startTime}, end time: {endTime}, total difference: {totalDifference}, number of iterations: {numOfIterations} average: {average}")
+
+		self.LogResults(log, extraData)
+
+		return (startTime, endTime, average)
 
 
 class NumGrid:
@@ -371,7 +401,7 @@ class NumGrid:
 		else:
 			self.grid = [[0 for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]
 
-	def PrintGrid(self, name = "Unknown", printWholeGrid=False):
+	def PrintGrid(self, name="Unknown", printWholeGrid=False):
 		print(f"Grid name: {name}, length: {len(self.grid[0])}, height: {len(self.grid)}")
 		if printWholeGrid:
 			for row in self.grid:
@@ -390,7 +420,7 @@ if __name__ == "__main__":
 		f()
 
 		print("\n------- sequence test -------")
-		s = Sequence(1, Func(print, "one"), 1, Func(print, "two", "three"))
+		s = Sequence(1, Func(print, "one"), 5, Func(print, "two", "three"))
 
 		s.Start()
 
@@ -403,7 +433,7 @@ if __name__ == "__main__":
 					if j == i:
 						x *= j ** i
 			return x
-		timer.Record(Func(LargeLoop))
+		timer.GetAverage(Func(LargeLoop), 10, printAllResults=False)
 
 		v1 = Vec2(10, 4)
 		v2 = Vec3(5, 20, 6)
@@ -424,4 +454,10 @@ if __name__ == "__main__":
 		print("\n------- num grid test -------")
 		grid = NumGrid((5, 3), Func(GridConditions)).PrintGrid("grid")
 
-	Main()
+	v1 = Vec2(150, 200)
+	v2 = v1.RotateRadians(3.14)
+	v3 = v1.RotateDegrees(90)
+
+	print((v1.x, v1.y), v2, v3)
+
+	# Main()
