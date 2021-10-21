@@ -165,6 +165,7 @@ def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolde
 			print("Failed to save. Data isn't type dict.")
 			return False
 
+
 	return True
 
 
@@ -259,4 +260,4 @@ if __name__ == "__main__":
 
 	print("\n----------\n")
 
-	print(TxtToJson("one:{four:{five:5}}\ntwo:[2, 3, 4]\nthree:(3, 4, 5)\n"))
+	print(TxtToJson("one:{four:{five:[1, 2, 3]}}\ntwo:[2, 3, 4]\nthree:(3, 4, 5)\n"))

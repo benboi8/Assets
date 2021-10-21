@@ -16,6 +16,7 @@ fps = 60
 
 
 if __name__ == "__main__":
+
 	def DrawLoop():
 		screen.fill((55, 55, 55))
 
@@ -29,4 +30,6 @@ if __name__ == "__main__":
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
 					running = False
+
+		DrawLoop()
 

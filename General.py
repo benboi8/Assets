@@ -266,11 +266,11 @@ class Vec2:
 				print("AttributeError")
 
 	def RotateRadians(self, angle):
-		return ((self.x * cos(angle) + self.y * sin(angle)), (-self.x * sin(angle) + self.y * cos(angle)))
+		return (round(self.x * cos(angle) + self.y * sin(angle)), round(-self.x * sin(angle) + self.y * cos(angle)))
 
 	def RotateDegrees(self, angle):
 		angle = radians(angle)
-		return ((self.x * cos(angle) + self.y * sin(angle)), (-self.x * sin(angle) + self.y * cos(angle)))
+		return (round(self.x * cos(angle) + self.y * sin(angle)), round(-self.x * sin(angle) + self.y * cos(angle)))
 
 
 class Vec3(Vec2):
@@ -454,9 +454,9 @@ if __name__ == "__main__":
 		print("\n------- num grid test -------")
 		grid = NumGrid((5, 3), Func(GridConditions)).PrintGrid("grid")
 
-	v1 = Vec2(150, 200)
+	v1 = Vec2(10, 4)
 	v2 = v1.RotateRadians(3.14)
-	v3 = v1.RotateDegrees(90)
+	v3 = v1.RotateDegrees(180)
 
 	print((v1.x, v1.y), v2, v3)
 
