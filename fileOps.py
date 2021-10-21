@@ -112,14 +112,14 @@ def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolde
 		if createNewFolderOrFile:
 			CreateFolder(folder)
 		else:
-			print(f"No folder with name '{folder}'")
+			print(f"Failed to save. No folder with name '{folder}'.")
 			return False
 
 	if not CheckFileExists(fileName + fileType, folder):
 		if createNewFolderOrFile:
 			CreateFile(fileName + fileType, folder)
 		else:
-			print(f"No file with name '{fileName + fileType}'' in folder '{folder}'")
+			print(f"Failed to save. No file with name '{fileName + fileType}' in folder '{folder}'.")
 			return False
 
 
@@ -162,7 +162,7 @@ def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolde
 				json.dump(data, file, indent=2)
 				file.close()
 		else:
-			print("Data isn't type dict.")
+			print("Failed to save. Data isn't type dict.")
 			return False
 
 	return True
@@ -171,12 +171,12 @@ def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolde
 def Load(fileName, folder="", fileType=""):
 	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
 
-	data = "File can't be found or is empty."
-
 	if not CheckFolderExists(folder):
+		print(f"Failed to load. No folder with name '{folder}'.")
 		return False
 
 	if not CheckFileExists(fileName + fileType, folder):
+		print(f"Failed to load. No file with name '{fileName + fileType}' in folder '{folder}'.")
 		return False
 
 	if fileType == ".txt":
@@ -195,13 +195,55 @@ def Load(fileName, folder="", fileType=""):
 
 
 def JsonToTxt(data):
-	return data
+	if type(data) != dict:
+		print("Failed to convert Json to txt. Data isn't a dict or Json.")
+		return False
+
+	data = RecursiveReadDict(data)
+
+	txt = ""
+
+	for d in data:
+		txt += f"{d[0]}:{d[1]}\n"
+
+	return txt
 
 
 def TxtToJson(txt):
-	return txt
+	if type(txt) != str:
+		print("Failed to convert str to json. Txt isnt a str.")
+		return False
+
+
+	splitTxt = txt.split("\n")
+
+	data = dict([])
+
+	for item in splitTxt:
+		if item != "":
+			key = item.split(":")[0]
+			value = ""
+			for s in item.split(":")[1:]:
+				if "{" in s:
+					value += f"{s}:"
+				else:
+					value += f"{s}"
+
+			key = key.strip("{}")
+			if "{" in value:
+				data[key] = TxtToJson(value.strip("{}"))
+			else:
+				data[key] = value
+
+
+	return data
+
 
 
 if __name__ == "__main__":
 	Save("file", {"one": 1, "two": 2}, folder="/saves", fileType=".json", fileIOType="w", createNewFolderOrFile=False)
 	print(Load("file", "/saves", ".json"))
+
+	print("\n----------\n")
+
+	print(TxtToJson("one:{four:{five:5}}\ntwo:2\nthree:3\n"))
