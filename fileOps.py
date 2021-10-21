@@ -229,15 +229,28 @@ def TxtToJson(txt):
 				else:
 					value += f"{s}"
 
-			key = key.strip("{}")
-			if "{" in value:
-				data[key] = TxtToJson(value.strip("{}"))
-			else:
-				data[key] = value
+
+			data[key] = ConvertStringToType(value)
 
 
 	return data
 
+
+def ConvertStringToType(txt):
+	if "{" in txt:
+		return TxtToJson(txt.strip("{}"))
+	elif "[" in txt:
+		txt = txt.replace(",", "")
+		txt = txt.replace(" ", "")
+		txt = txt.strip("[]")
+		return list(txt)
+	elif "(" in txt:
+		txt = txt.replace(",", "")
+		txt = txt.replace(" ", "")
+		txt = txt.strip("()")
+		return tuple(txt)
+
+	return txt
 
 
 if __name__ == "__main__":
@@ -246,4 +259,4 @@ if __name__ == "__main__":
 
 	print("\n----------\n")
 
-	print(TxtToJson("one:{four:{five:5}}\ntwo:2\nthree:3\n"))
+	print(TxtToJson("one:{four:{five:5}}\ntwo:[2, 3, 4]\nthree:(3, 4, 5)\n"))
