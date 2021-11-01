@@ -23,10 +23,13 @@ polygons = {}
 allBoxs = {}
 
 
-def DrawVector(vector, color, radius=3, surface=screen):
-	pg.draw.circle(surface, color, (vector.x, vector.y), radius)
-	d = vector.Direction(centerOfScreen) / abs(vector.Direction(centerOfScreen))+0.1
-	pg.draw.line(surface, color, (vector.x, vector.y), (vector.x + (d * 100), vector.y + (d * 100)))
+def DrawVector(vector, colors, magnitude=None, radius=3, surface=screen):
+	if magnitude == None:
+		magnitude = vector.Magnitude()
+
+	pg.draw.circle(surface, colors[0], (vector.x, vector.y), radius)
+	d = vector.Direction(centerOfScreen)
+	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d * magnitude), vector.y + (d * magnitude)))
 
 
 def DrawRectOutline(color, rect, width=1, surface=screen):
@@ -36,7 +39,6 @@ def DrawRectOutline(color, rect, width=1, surface=screen):
 
 	for i in range(int(width)):
 		pg.gfxdraw.rectangle(surface, (x + i, y + i, w - i * 2, h - i * 2), color)
-
 
 
 class RayCast:
@@ -252,10 +254,13 @@ def DrawAllGUIObjects():
 		allBoxs[key].Draw()
 
 
-
 if __name__ == "__main__":
 
-	v1 = Vec2(100, 100)
+	vs = []
+	scale = 80
+	for x in range(1, scale):
+		for y in range(1, scale):
+			vs.append(Vec2(x * (width / scale), y * (height / scale)))
 
 	# Polygon(centerOfScreen, 5, white, 100)
 
@@ -264,8 +269,8 @@ if __name__ == "__main__":
 
 		DrawAllGUIObjects()
 
-		DrawVector(v1, red)
-		v1.Set(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1])
+		for v in vs:
+			DrawVector(v, [(55, 55, 205), red], 10)
 
 		pg.display.update()
 
