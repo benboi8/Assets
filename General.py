@@ -1,11 +1,15 @@
 from math import *
 from random import *
+import math
+import random
 import datetime as dt
 from itertools import *
 import fileOps
 
 sequences = []
-
+all2DVectors = []
+all3DVectors = []
+numGrids = []
 
 class Wait:
 	def __init__(self, duration):
@@ -133,11 +137,12 @@ class Sequence:
 
 
 class Vec2:
-	def __init__(self, x, y):
+	def __init__(self, x, y, lists=[all2DVectors]):
 		self.x = x
 		self.y = y
-		self.length = None
-		self.direction = None
+		self.origin = x, y
+
+		AddToListOrDict(lists, self)
 
 	def ToString(self):
 		return f"x:{self.x} y:{self.y}"
@@ -153,137 +158,132 @@ class Vec2:
 		self.y = y
 
 	def Copy(self):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x, self.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x, self.y, self.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x, self.y)
 
 	def Add(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x + vec.x, self.y + vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x + vec.x, self.y + vec.y, self.z + vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x + vec[0], self.y + vec[1])
 
 	def Sub(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x - vec.x, self.y - vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x - vec.x, self.y - vec.y, self.z - vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x - vec[0], self.y - vec[1])
 
 	def Multiply(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x * vec.x, self.y * vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x * vec.x, self.y * vec.y, self.z * vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x * vec[0], self.y * vec[1])
 
 	def Divide(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x / vec.x, self.y / vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x / vec.x, self.y / vec.y, self.z / vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x / vec[0], self.y / vec[1])
 
 	def IntDivide(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x // vec.x, self.y // vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x // vec.x, self.y // vec.y, self.z // vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x // vec[0], self.y // vec[1])
 
 	def Magnitude(self):
 		return sqrt(self.MagnitudeSquared())
 
 	def MagnitudeSquared(self):
-		try:
-			if type(self) == Vec2:
-				return self.x * self.x + self.y * self.y
-			elif type(self) == Vec3:
-				return self.x * self.x + self.y * self.y + self.z * self.z
-		except AttributeError:
-			print("AttributeError")
+		return (self.x ** 2) + (self.y ** 2)
+
+	def Direction(self, pointOfDirection):
+		return atan2(pointOfDirection[1] - self.y, pointOfDirection[0] - self.x)
 
 	def Dot(self, vec):
-		try:
-			if type(self) == Vec2:
-				return self.x * vec.x + self.y * vec.y
-			elif type(self) == Vec3:
-				return self.x * vec.x + self.y * vec.y + self.z * vec.z
-		except AttributeError:
-			print("AttributeError")
+		return self.x * vec.x + self.y * vec.y
 
 	def Cross(self, vec):
-		try:
-			if type(self) == Vec2:
-				return Vec2(self.x * vec.x - self.y * vec.y)
-			elif type(self) == Vec3:
-				return Vec3(self.x * vec.x - self.y * vec.y - self.z * vec.z)
-		except AttributeError:
-			print("AttributeError")
+		return Vec2(self.x * vec.x - self.y * vec.y)
 
-	def GetEuclideanDistance(self, vec):
-		try:
-			if type(self) == Vec2:
-				return sqrt((self.x - vec.x) ** 2 + (self.y - vec.y) ** 2)
-			elif type(self) == Vec3:
-				return sqrt((self.x - vec.x) ** 2 + (self.y - vec.y) ** 2, (self.z - vec.z) ** 2)
-		except AttributeError:
-			print("AttributeError")
+	def GetEuclideanDistance(self, pos):
+		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
 
-	def GetTaxicabDistance(self, vec):
-		try:
-			if type(self) == Vec2:
-				return abs(self.x - vec.x) + abs(self.y - vec.y)
-			elif type(self) == Vec3:
-				return abs(self.x - vec.x) + abs(self.y - vec.y) + abs(self.z - vec.z)
-		except AttributeError:
-			print("AttributeError")
+	def GetTaxicabDistance(self, pos):
+		return abs(self.x - pos[0]) + abs(self.y - pos[1])
 
 	def Normalize(self):
-		length = self.Magnitude()
-		if length != 0:
-			try:
-				if type(self) == Vec2:
-					return self.Multiply(Vec2(1 / length, 1 / length))
-				elif type(self) == Vec3:
-					return self.Multiply(Vec3(1 / length, 1 / length, 1 / length))
-			except AttributeError:
-				print("AttributeError")
+		return self.Multiply(Vec2(1 / self.Magnitude(), 1 / self.Magnitude()))
 
-	def RotateRadians(self, angle):
-		return (round(self.x * cos(angle) + self.y * sin(angle)), round(-self.x * sin(angle) + self.y * cos(angle)))
+	def RotateRadians(self, angle, distanceToRotPoint, pointOfRot=None):
+		if pointOfRot == None:
+			pointOfRot = self.origin
+		angle += (225 * (pi / 180))
+		angle *= -1
+		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
-	def RotateDegrees(self, angle):
+	def RotateDegrees(self, angle, distanceToRotPoint, pointOfRot=None):
+		if pointOfRot == None:
+			pointOfRot = self.origin
 		angle = radians(angle)
-		return (round(self.x * cos(angle) + self.y * sin(angle)), round(-self.x * sin(angle) + self.y * cos(angle)))
+		angle += (225 * (pi / 180))
+		angle *= -1
+		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
 
 class Vec3(Vec2):
-	def __init__(self, x, y, z):
-		super().__init__(x, y)
-		self.z = z
-
-	def SetZ(self, z):
+	def __init__(self, x, y, z, lists=[all3DVectors]):
+		super().__init__(x, y, lists)
 		self.z = z
 
 	def ToString(self):
 		return f"x:{self.x} y:{self.y} z:{self.z}"
 
+	def Set(self, x, y):
+		self.x = x
+		self.y = y
+
+	def SetX(self, x):
+		self.x = x
+
+	def SetY(self, y):
+		self.y = y
+
+	def SetZ(self, z):
+		self.z = z
+
+	def Copy(self):
+		return Vec3(self.x, self.y, self.z)
+
+	def Add(self, vec):
+		return (self.x + vec[0], self.y + vec[1], self.z + vec[2])
+
+	def Sub(self, vec):
+		return (self.x - vec[0], self.y - vec[1], self.z - vec[2])
+
+	def Multiply(self, vec):
+		return (self.x * vec[0], self.y * vec[1], self.z * vec[2])
+
+	def Divide(self, vec):
+		return (self.x / vec[0], self.y / vec[1], self.z / vec[2])
+
+	def IntDivide(self, vec):
+		return (self.x // vec[0], self.y // vec[1], self.z / vec[2])
+
+	def Magnitude(self):
+		return sqrt(self.MagnitudeSquared())
+
+	def MagnitudeSquared(self):
+		return (self.x ** 2) + (self.y ** 2) + (self.z ** 2)
+
+	def Direction(self, pointOfDirection):
+		return pointOfDirection[0] - self.x, pointOfDirection[1] - self.y, pointOfDirection[2] - self.z
+
+	def Dot(self, vec):
+		return self.x * vec.x + self.y * vec.y + self.z * vec.z
+
+	def Cross(self, vec):
+		return (self.x * vec.x - self.y * vec.y - self.z * vec.z)
+
+	def GetEuclideanDistance(self, pos):
+		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2 + (self.z - pos[2]) ** 2)
+
+	def GetTaxicabDistance(self, pos):
+		return abs(self.x - pos[0]) + abs(self.y - pos[1]) + abs(self.z - pos[2])
+
+	def Normalize(self):
+		return self.Multiply((1 / self.Magnitude(), 1 / self.Magnitude(), 1 / self.Magnitude()))
+
+	# quaternions
+	def RotateRadians(self, angle, distanceToRotPoint, pointOfRot=None):
+		pass
+
+	def RotateDegrees(self, angle, distanceToRotPoint, pointOfRot=None):
+		pass
 
 # used to time how long a function takes to run
 class Timer:
@@ -390,10 +390,12 @@ class Timer:
 
 
 class NumGrid:
-	def __init__(self, gridSize, gridFunc=None):
+	def __init__(self, gridSize, gridFunc=None, lists=[numGrids]):
 		self.gridSize = gridSize
 		self.gridFunc = gridFunc
 		self.CreateGrid()
+
+		AddToListOrDict(lists, self)
 
 	def CreateGrid(self):
 		if isinstance(self.gridFunc, Func):
@@ -408,56 +410,25 @@ class NumGrid:
 				print(row)
 
 
+def Lerp(v0, v1, t):
+	return v0 + t * (v1 - v0)
+
+
+def AddToListOrDict(lists, obj):
+	for listToAppend in lists:
+		if type(listToAppend) == list:
+			listToAppend.append(obj)
+		elif type(listToAppend) == dict:
+			try:
+				if obj.name == "":
+					name = len(listToAppend)
+				else:
+					name = obj.name
+
+				listToAppend[name] = obj
+			except:
+				listToAppend[type(obj)] = obj
+
+
 if __name__ == "__main__":
-	def Main():
-		timer = Timer()
-
-		wait = Wait(0)
-
-
-		print("------- Func test -------")
-		f = Func(print, "one", "two")
-		f()
-
-		print("\n------- sequence test -------")
-		s = Sequence(1, Func(print, "one"), 5, Func(print, "two", "three"))
-
-		s.Start()
-
-		print("\n------- timer test -------")
-		def LargeLoop():
-			x = 0
-			for i in range(200):
-				for j in range(1000):
-					x += j * i
-					if j == i:
-						x *= j ** i
-			return x
-		timer.GetAverage(Func(LargeLoop), 10, printAllResults=False)
-
-		v1 = Vec2(10, 4)
-		v2 = Vec3(5, 20, 6)
-
-		def GridConditions(x, y, xLen, yLen):
-			if x == 0:
-				return 1
-			if x == xLen - 1:
-				return 1
-
-			if y == 0:
-				return 1
-			if y == yLen - 1:
-				return 1
-
-			return 0
-
-		print("\n------- num grid test -------")
-		grid = NumGrid((5, 3), Func(GridConditions)).PrintGrid("grid")
-
-	v1 = Vec2(10, 4)
-	v2 = v1.RotateRadians(3.14)
-	v3 = v1.RotateDegrees(180)
-
-	print((v1.x, v1.y), v2, v3)
-
-	# Main()
+	pass
