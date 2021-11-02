@@ -183,7 +183,9 @@ class Vec2:
 
 	def Direction(self, pointOfDirection):
 		# return atan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
-		return tan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
+		# return tan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
+		# return (self.x / abs(self.x), self.y / abs(self.y))
+		return ((pointOfDirection[0] - self.x) / abs(pointOfDirection[0]), (pointOfDirection[1] - self.y) / abs(pointOfDirection[1]))
 
 	def Dot(self, vec):
 		return self.x * vec.x + self.y * vec.y

@@ -23,13 +23,13 @@ polygons = {}
 allBoxs = {}
 
 
-def DrawVector(vector, colors, magnitude=None, radius=3, surface=screen):
+def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
 	if magnitude == None:
 		magnitude = vector.Magnitude()
 
 	pg.draw.circle(surface, colors[0], (vector.x, vector.y), radius)
-	d = vector.Direction(centerOfScreen)
-	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d * magnitude), vector.y + (d * magnitude)))
+	d = vector.Direction(directionPoint)
+	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d[0] * magnitude), vector.y + (d[1] * magnitude)))
 
 
 def DrawRectOutline(color, rect, width=1, surface=screen):
@@ -137,7 +137,7 @@ class Polygon:
 			for j in range(-1, 2):
 				self.lines.append(Line((self.points[i - 1].x, self.points[i - 1].y), (p.x, p.y), self.color, startPointRadius=self.pointRadius, endPointRadius=self.pointRadius, lists=[]))
 
-		self.Fill()
+		# self.Fill()
 
 	def Fill(self):
 		# bounding box around polygon
@@ -256,11 +256,7 @@ def DrawAllGUIObjects():
 
 if __name__ == "__main__":
 
-	vs = []
-	scale = 80
-	for x in range(1, scale):
-		for y in range(1, scale):
-			vs.append(Vec2(x * (width / scale), y * (height / scale)))
+	v = Vec2(0, 0)
 
 	# Polygon(centerOfScreen, 5, white, 100)
 
@@ -269,8 +265,8 @@ if __name__ == "__main__":
 
 		DrawAllGUIObjects()
 
-		for v in vs:
-			DrawVector(v, [(55, 55, 205), red], 10)
+		DrawVector(v, [(55, 55, 205), red], 20)
+		v.Set(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1])
 
 		pg.display.update()
 
