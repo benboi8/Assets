@@ -21,7 +21,9 @@ lines = {}
 polygons = {}
 
 allBoxs = {}
-
+allLabels = {}
+allTextBoxs = {}
+allButtons = {}
 
 def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
 	if magnitude == None:
@@ -39,6 +41,45 @@ def DrawRectOutline(color, rect, width=1, surface=screen):
 
 	for i in range(int(width)):
 		pg.gfxdraw.rectangle(surface, (x + i, y + i, w - i * 2, h - i * 2), color)
+
+
+def AlignText(rect, textSurface, alignment="center", width=2):
+	x, y, w, h = rect
+
+	# get horizontal and vertical alignments
+	alignment = str(alignment).lower().strip()
+
+	if "-" in alignment:
+		align = alignment.split("-")
+		horizontal, vertical = align[0], align[1]
+
+	else:
+		if alignment == "center":
+			horizontal, vertical = alignment, alignment
+		elif alignment == "left" or alignment == "right":
+			horizontal, vertical = alignment, "center"
+		elif alignment == "top" or alignment == "bottom":
+			horizontal, vertical = "center", alignment
+		else:
+			horizontal, vertical = "center", "center"
+
+	# check horizontal alignment
+	if horizontal == "center":
+		x += w // 2 - textSurface.get_width() // 2
+	elif horizontal == "left":
+		x += (width + 2) * sf
+	elif horizontal == "right":
+		x += w - textSurface.get_width() - ((width + 2) * sf)
+
+	# check vertical alignment
+	if vertical == "center":
+		y += h // 2 - textSurface.get_height() // 2
+	elif vertical == "top":
+		y += (width + 2) * sf
+	elif vertical == "bottom":
+		y += h - textSurface.get_height() - ((width + 2) * sf)
+
+	return pg.Rect(x, y, w, h)
 
 
 class RayCast:
@@ -219,7 +260,7 @@ class Box:
 	def __init__(self, rect, colors, name="", surface=screen, drawData={}, lists=[allBoxs]):
 		self.rect = pg.Rect(rect)
 		self.backgroundColor = colors[0]
-		self.forgroundColor = colors[1]
+		self.foregroundColor = colors[1]
 		self.name = name
 		self.surface = surface
 		self.drawData = drawData
@@ -237,7 +278,290 @@ class Box:
 
 		# draw border
 		if self.drawBorder:
-			DrawRectOutline(self.forgroundColor, self.rect, self.borderWidth)
+			DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth)
+
+
+class Label(Box):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, lists=[allLabels]):
+		super().__init__(rect, colors, name, surface, drawData, lists)
+
+		self.text = text
+		self.fontSize = textData.get("fontSize", 24)
+		self.fontName = textData.get("fontSize", "arial")
+		self.fontColor = textData.get("fontColor", white)
+		self.alignText = textData.get("alignText", "center")
+
+		self.CreateTextObj()
+
+	def CreateTextObj(self):
+		try:
+			self.font = pg.font.Font(self.fontName, self.fontSize)
+		except FileNotFoundError:
+			self.font = pg.font.SysFont(self.fontName, self.fontSize)
+
+		self.textSurface = self.font.render(str(self.text), True, self.fontColor)
+		self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
+
+	def Draw(self):
+		# draw background
+		if self.drawBackground:
+			pg.draw.rect(self.surface, self.backgroundColor, self.rect)
+
+		# draw border
+		if self.drawBorder:
+			DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth)
+
+		self.DrawText()
+
+	def DrawText(self):
+		self.surface.blit(self.textSurface, self.textRect)
+
+
+class TextInputBox(Label):
+	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
+		self.splashText = inputData.get("splashText", "Type here.")
+		super().__init__(rect, colors, self.splashText, name, surface, drawData, textData, lists)
+		self.backgroundColor = colors[0]
+		self.inactiveColor = colors[1]
+		self.activeColor = colors[2]
+		self.foregroundColor = self.inactiveColor
+
+		self.textColor = textData.get("textColor", white)
+
+		self.charLimit = inputData.get("charLimit", -1)
+
+		self.growRect = drawData.get("growRect", False)
+		self.header = drawData.get("header", False)
+		self.replaceSplashText = drawData.get("replaceSplashText", True)
+
+		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFile", None)
+		self.allowedKeysFilePath = inputData.get("allowedKeysFile", None)
+
+		self.nonAllowedKeysList = inputData.get("nonAllowedKeysList", [])
+		self.allowedKeysList = inputData.get("allowedKeysList", [])
+
+		self.nonAllowedKeys = set()
+		self.allowedKeys = set()
+
+		self.pointer = len(self.text)
+
+		self.GetKeys()
+
+		if type(self.header) == str:
+			self.MakeHeader()
+
+		self.active = False
+
+	def MakeHeader(self):
+		self.headerTextSurface = self.font.render(self.header, True, self.textColor)
+		self.headerRect = AlignText(self.rect, self.headerTextSurface, "center-top", self.borderWidth)
+		self.rect.h += self.headerTextSurface.get_height() // 2
+		try:
+			if self.alignText.split("-")[1] == "top":
+				self.alignText = self.alignText.split("-")[0]
+		except:
+			pass
+
+	def GetKeys(self):
+		if self.nonAllowedKeysFilePath != None:
+			with open(self.nonAllowedKeysFilePath, "r") as nonAllowedKeysFile:
+				nonAllowedKeysText = nonAllowedKeysFile.read()
+				for char in nonAllowedKeysText:
+					self.nonAllowedKeys.add(char)
+
+		for char in self.nonAllowedKeysList:
+			self.nonAllowedKeys.add(char)
+
+		if self.allowedKeysFilePath != None:
+			with open(self.allowedKeysFilePath, "r") as allowedKeysFile:
+				allowedKeysText = allowedKeysFile.read()
+				for char in allowedKeysText:
+					self.allowedKeys.add(char)
+
+		for char in self.allowedKeysList:
+			self.allowedKeys.add(char)
+
+	def HandleEvent(self, event):
+		if event.type == pg.MOUSEBUTTONDOWN:
+			if event.button == 1:
+				if self.rect.collidepoint(pg.mouse.get_pos()):
+					self.pointer = len(self.text)
+					self.active = not self.active
+					if self.active:
+						self.foregroundColor = self.activeColor
+					else:
+						self.foregroundColor = self.inactiveColor
+				else:
+					self.active = False
+					self.foregroundColor = self.inactiveColor
+
+		if event.type == pg.KEYDOWN:
+			if event.key == pg.K_RETURN:
+				self.active = False
+				self.foregroundColor = self.inactiveColor
+
+			if event.key == pg.K_RIGHT:
+				self.pointer = min(len(self.text), self.pointer + 1)
+			if event.key == pg.K_LEFT:
+				if not self.replaceSplashText:
+					self.pointer = max(len(self.splashText), self.pointer - 1)
+				else:
+					self.pointer = max(0, self.pointer - 1)
+
+		if self.active:
+			self.HandleKeyboard(event)
+
+	def HandleKeyboard(self, event):
+		if self.active:
+			if self.replaceSplashText:
+				textLength = len(self.text)
+			else:
+				textLength = len(self.text) - len(self.splashText)
+
+			if event.type == pg.KEYDOWN:
+				if event.key == pg.K_BACKSPACE:
+					if textLength != 0 and self.text != self.splashText:
+						self.text = self.text[: self.pointer - 1] + self.text[self.pointer :]
+						self.pointer = max(len(self.splashText), self.pointer - 1)
+				elif event.key == pg.K_DELETE:
+					if textLength != 0 and self.text != self.splashText:
+						self.text = self.text[: self.pointer] + self.text[self.pointer + 1:]
+				else:
+					if event.key != pg.K_LEFT and event.key != pg.K_RIGHT:
+						self.FilterText(event.unicode)
+
+				if self.text == "":
+					self.text = self.splashText
+				self.textSurface = self.font.render(self.text, True, self.textColor)
+				if self.growRect:
+					self.rect.w = max(self.rect.w, self.textSurface.get_width() + 12)
+
+	def FilterText(self, key):
+		if self.replaceSplashText:
+			textLength = len(self.text)
+		else:
+			textLength = len(self.text) - len(self.splashText)
+
+		if textLength + 1 <= self.charLimit or self.charLimit == -1:
+			if self.replaceSplashText:
+				if self.text == self.splashText:
+					self.text = ""
+
+			if len(self.nonAllowedKeys) == 0:
+				if len(self.allowedKeys) == 0:
+					if self.pointer == len(self.text):
+						self.text += key
+					else:
+						self.text = self.text[: self.pointer] + key + self.text[self.pointer:]
+					self.pointer = min(len(self.text), self.pointer + 1)
+
+				else:
+					if key in self.allowedKeys:
+						if self.pointer == len(self.text):
+							self.text += key
+						else:
+							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
+						self.pointer = min(len(self.text), self.pointer + 1)
+
+			else:
+				if len(self.allowedKeys) == 0:
+					if key not in self.nonAllowedKeys:
+						if key in self.allowedKeys:
+							if self.pointer == len(self.text):
+								self.text += key
+							else:
+								self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
+							self.pointer = min(len(self.text), self.pointer + 1)
+
+				else:
+					if key not in self.nonAllowedKeys:
+						if self.pointer == len(self.text):
+							self.text += key
+						else:
+							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
+						self.pointer = min(len(self.text), self.pointer + 1)
+
+	def Draw(self):
+		pg.draw.rect(self.surface, self.backgroundColor, self.rect)
+		DrawRectOutline(self.foregroundColor, self.rect, surface=self.surface)
+
+		if self.active:
+			if dt.datetime.now().microsecond % 1000000 > 500000:
+				pg.draw.rect(self.surface, self.textColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y, 2, self.textSurface.get_height()))
+
+		self.surface.blit(self.textSurface, self.textRect)
+
+		if type(self.header) == str:
+			self.surface.blit(self.headerTextSurface, self.headerRect)
+
+
+class Button(Label):
+	def __init__(self, rect, colors, onClick, onClickArgs, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons]):
+		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
+
+		self.onClick = onClick
+		self.onClickArgs = onClickArgs
+		self.disabled = False
+		self.active = False
+		self.result = None
+
+		self.backgroundColor = colors[0]
+		self.inactiveColor = colors[1]
+		self.activeColor = colors[2]
+		self.foregroundColor = self.inactiveColor
+		self.toggle = inputData.get("toggle", False)
+
+		self.keyBinds = inputData.get("keyBinds", {"clickType": pg.MOUSEBUTTONDOWN, "active": 1, "releaseType": pg.MOUSEBUTTONUP, "nameType": "mouse"})
+
+	def HandleEvent(self, event):
+		if self.rect.collidepoint(pg.mouse.get_pos()):
+			if event.type == self.keyBinds["clickType"]:
+				if self.keyBinds["nameType"] == "mouse":
+					if event.button == self.keyBinds["active"]:
+						if not self.toggle:
+							self.Click()
+						else:
+							if self.active:
+								self.Release()
+							else:
+								self.Click()
+
+				elif self.keyBinds["nameType"] == "key":
+					if event.key == self.keyBinds["active"]:
+						if not self.toggle:
+							self.Click()
+						else:
+							if self.active:
+								self.Release()
+							else:
+								self.Click()
+
+		if not self.toggle:
+			if event.type == self.keyBinds["releaseType"]:
+				if self.keyBinds["nameType"] == "mouse":
+					if event.button == self.keyBinds["active"]:
+						self.Release()
+
+				elif self.keyBinds["nameType"] == "key":
+					if event.key == self.keyBinds["active"]:
+						self.Release()
+
+	def Click(self):
+		if self.disabled:
+			return
+
+		if callable(self.onClick):
+			self.result = self.onClick(*self.onClickArgs)
+
+		elif isinstance(self.onClick, Sequence):
+			self.onClick.Start()
+
+		self.active = True
+		self.foregroundColor = self.activeColor
+
+	def Release(self):
+		self.active = False
+		self.foregroundColor = self.inactiveColor
 
 
 def DrawAllGUIObjects():
@@ -253,20 +577,31 @@ def DrawAllGUIObjects():
 	for key in allBoxs:
 		allBoxs[key].Draw()
 
+	for key in allLabels:
+		allLabels[key].Draw()
+		allLabels[key].DrawText()
+
+	for key in allTextBoxs:
+		allTextBoxs[key].Draw()
+
+	for key in allButtons:
+		allButtons[key].Draw()
+
+
+def HanldeGui(event):
+	for key in allTextBoxs:
+		allTextBoxs[key].HandleEvent(event)
+
+	for key in allButtons:
+		allButtons[key].HandleEvent(event)
+
 
 if __name__ == "__main__":
-
-	v = Vec2(0, 0)
-
-	# Polygon(centerOfScreen, 5, white, 100)
 
 	def DrawLoop():
 		screen.fill(darkGray)
 
 		DrawAllGUIObjects()
-
-		DrawVector(v, [(55, 55, 205), red], 20)
-		v.Set(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1])
 
 		pg.display.update()
 
@@ -280,5 +615,7 @@ if __name__ == "__main__":
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
 					running = False
+
+			HanldeGui(event)
 
 		DrawLoop()
