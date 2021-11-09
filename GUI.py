@@ -25,6 +25,13 @@ allLabels = {}
 allTextBoxs = {}
 allButtons = {}
 
+fontName = "arial"
+
+def ChangeFontName(name):
+	global fontName
+	fontName = name
+
+
 def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
 	if magnitude == None:
 		magnitude = vector.Magnitude()
@@ -67,17 +74,17 @@ def AlignText(rect, textSurface, alignment="center", width=2):
 	if horizontal == "center":
 		x += w // 2 - textSurface.get_width() // 2
 	elif horizontal == "left":
-		x += (width + 2) * sf
+		x += width + 2
 	elif horizontal == "right":
-		x += w - textSurface.get_width() - ((width + 2) * sf)
+		x += w - textSurface.get_width() - (width + 2)
 
 	# check vertical alignment
 	if vertical == "center":
 		y += h // 2 - textSurface.get_height() // 2
 	elif vertical == "top":
-		y += (width + 2) * sf
+		y += width + 2
 	elif vertical == "bottom":
-		y += h - textSurface.get_height() - ((width + 2) * sf)
+		y += h - textSurface.get_height() - (width + 2)
 
 	return pg.Rect(x, y, w, h)
 
@@ -266,7 +273,7 @@ class Box:
 		self.drawData = drawData
 
 		self.drawBorder = drawData.get("drawBorder", True)
-		self.borderWidth = drawData.get("borderWidth", 1)
+		self.borderWidth = drawData.get("borderWidth", 2)
 		self.drawBackground = drawData.get("drawBackground", True)
 
 		AddToListOrDict(lists, self)
@@ -278,7 +285,7 @@ class Box:
 
 		# draw border
 		if self.drawBorder:
-			DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth)
+			DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth, surface=self.surface)
 
 
 class Label(Box):
@@ -287,20 +294,41 @@ class Label(Box):
 
 		self.text = text
 		self.fontSize = textData.get("fontSize", 24)
-		self.fontName = textData.get("fontSize", "arial")
+		self.fontName = textData.get("fontName", fontName)
 		self.fontColor = textData.get("fontColor", white)
 		self.alignText = textData.get("alignText", "center")
+		self.multiline = textData.get("multiline", False)
 
 		self.CreateTextObj()
 
 	def CreateTextObj(self):
+		self.textObjs = []
 		try:
 			self.font = pg.font.Font(self.fontName, self.fontSize)
 		except FileNotFoundError:
 			self.font = pg.font.SysFont(self.fontName, self.fontSize)
+		except TypeError:
+			self.font = pg.font.SysFont(self.fontName, self.fontSize)
 
-		self.textSurface = self.font.render(str(self.text), True, self.fontColor)
-		self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
+		if not self.multiline:
+			self.textSurface = self.font.render(str(self.text).strip("\n"), True, self.fontColor)
+			self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
+			self.textObjs.append((self.textSurface, self.textRect))
+		else:
+			self.GetTextObjects()
+
+	def GetTextObjects(self):
+		self.textObjs = []
+		self.text = str(self.text)
+		if "\\n" in self.text:
+			text = self.text.split("\\n")
+		else:
+			text = self.text.split("\n")
+
+		rect = self.rect
+		for i, t in enumerate(text):
+			textSurface = self.font.render(str(t), True, self.fontColor)
+			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + (i * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
 
 	def Draw(self):
 		# draw background
@@ -314,7 +342,12 @@ class Label(Box):
 		self.DrawText()
 
 	def DrawText(self):
-		self.surface.blit(self.textSurface, self.textRect)
+		for obj in self.textObjs:
+			self.surface.blit(obj[0], obj[1])
+
+	def UpdateText(self, text):
+		self.text = text
+		self.CreateTextObj()
 
 
 class TextInputBox(Label):
@@ -329,6 +362,8 @@ class TextInputBox(Label):
 		self.textColor = textData.get("textColor", white)
 
 		self.charLimit = inputData.get("charLimit", -1)
+
+		self.input = ""
 
 		self.growRect = drawData.get("growRect", False)
 		self.header = drawData.get("header", False)
@@ -432,9 +467,12 @@ class TextInputBox(Label):
 
 				if self.text == "":
 					self.text = self.splashText
-				self.textSurface = self.font.render(self.text, True, self.textColor)
-				if self.growRect:
-					self.rect.w = max(self.rect.w, self.textSurface.get_width() + 12)
+				self.UpdateText()
+
+		if self.replaceSplashText:
+			self.input = self.text
+		else:
+			self.input = self.text[len(self.splashText):]
 
 	def FilterText(self, key):
 		if self.replaceSplashText:
@@ -483,7 +521,7 @@ class TextInputBox(Label):
 
 	def Draw(self):
 		pg.draw.rect(self.surface, self.backgroundColor, self.rect)
-		DrawRectOutline(self.foregroundColor, self.rect, surface=self.surface)
+		DrawRectOutline(self.foregroundColor, self.rect, surface=self.surface, width=self.borderWidth)
 
 		if self.active:
 			if dt.datetime.now().microsecond % 1000000 > 500000:
@@ -494,9 +532,19 @@ class TextInputBox(Label):
 		if type(self.header) == str:
 			self.surface.blit(self.headerTextSurface, self.headerRect)
 
+	def ClearText(self):
+		self.text = self.splashText
+		self.input = self.text
+		self.UpdateText()
+
+	def UpdateText(self):
+		self.textSurface = self.font.render(self.text, True, self.textColor)
+		if self.growRect:
+			self.rect.w = max(self.rect.w, self.textSurface.get_width() + 12)
+
 
 class Button(Label):
-	def __init__(self, rect, colors, onClick, onClickArgs, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons]):
+	def __init__(self, rect, colors, onClick=None, onClickArgs=[], text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons]):
 		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
 
 		self.onClick = onClick
@@ -588,7 +636,7 @@ def DrawAllGUIObjects():
 		allButtons[key].Draw()
 
 
-def HanldeGui(event):
+def HandleGui(event):
 	for key in allTextBoxs:
 		allTextBoxs[key].HandleEvent(event)
 
@@ -605,6 +653,9 @@ if __name__ == "__main__":
 
 		pg.display.update()
 
+	def HandleEvents(event):
+		HandleGui(event)
+
 
 	while running:
 		clock.tick_busy_loop(fps)
@@ -616,6 +667,6 @@ if __name__ == "__main__":
 				if event.key == pg.K_ESCAPE:
 					running = False
 
-			HanldeGui(event)
+			HandleEvents(event)
 
 		DrawLoop()
