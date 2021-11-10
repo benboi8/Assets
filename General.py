@@ -138,6 +138,7 @@ class Sequence:
 				self.Kill()
 
 
+# fix direction
 class Vec2:
 	def __init__(self, x, y, lists=[all2DVectors]):
 		self.x = x
@@ -405,7 +406,8 @@ class NumGrid:
 		AddToListOrDict(lists, self)
 
 	def CreateGrid(self):
-		if isinstance(self.gridFunc, Func):
+		# if isinstance(self.gridFunc, Func):
+		if callable(self.gridFunc):
 			self.grid = [[self.gridFunc(x, y, self.gridSize[0], self.gridSize[1]) for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]
 		else:
 			self.grid = [[0 for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]

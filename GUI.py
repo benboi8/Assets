@@ -32,6 +32,13 @@ def ChangeFontName(name):
 	fontName = name
 
 
+def ChangeScreenSize(w, h):
+	global width, height, screen, centerOfScreen
+	width, height = w, h
+	screen = pg.display.set_mode((width, height))
+	centerOfScreen = (width / 2, height / 2)
+
+
 def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
 	if magnitude == None:
 		magnitude = vector.Magnitude()
