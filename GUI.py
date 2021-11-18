@@ -96,6 +96,37 @@ def AlignText(rect, textSurface, alignment="center", width=2):
 	return pg.Rect(x, y, w, h)
 
 
+def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, surface=screen):
+	rect = pg.Rect(rect)
+	backgroundColor = colors[0]
+	borderColor = colors[1]
+
+	pg.draw.rect(surface, backgroundColor, rect)
+
+	# draw background
+
+
+	# draw border
+	if rect.w > rect.h:
+		radius = rect.h // max(2, roundness)
+
+		xOffSet = (rect.w // 2) - borderWidth
+		yOffSet = (borderWidth // 2)
+
+
+	else:
+		radius = rect.w // max(2, roundness)
+
+		xOffSet = 0
+		yOffSet = (borderWidth // 2) + (radius * 2) - rect.h
+
+
+	pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius, radius, 180, 270, borderColor)
+	pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius, radius, 270, 0, borderColor)
+	# pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius - yOffSet, radius, 0, 90, borderColor)
+	# pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius - yOffSet, radius, 90, 180, borderColor)
+
+
 class RayCast:
 	def Cast(self, p1, p2, walls):
 		for wall in walls:
@@ -657,6 +688,9 @@ if __name__ == "__main__":
 		screen.fill(darkGray)
 
 		DrawAllGUIObjects()
+
+		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), 3)
+		DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), 4)
 
 		pg.display.update()
 
