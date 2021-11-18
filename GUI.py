@@ -32,10 +32,13 @@ def ChangeFontName(name):
 	fontName = name
 
 
-def ChangeScreenSize(w, h):
+def ChangeScreenSize(w, h, fullScreen=False):
 	global width, height, screen, centerOfScreen
 	width, height = w, h
-	screen = pg.display.set_mode((width, height))
+	if not fullScreen:
+		screen = pg.display.set_mode((width, height))
+	else:
+		screen = pg.display.set_mode((width, height), pg.FULLSCREEN)
 	centerOfScreen = (width / 2, height / 2)
 
 
@@ -101,7 +104,6 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, surface=screen):
 	backgroundColor = colors[0]
 	borderColor = colors[1]
 
-	pg.draw.rect(surface, backgroundColor, rect)
 
 	# draw background
 
@@ -109,22 +111,44 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, surface=screen):
 	# draw border
 	if rect.w > rect.h:
 		radius = rect.h // max(2, roundness)
-
-		xOffSet = (rect.w // 2) - borderWidth
-		yOffSet = (borderWidth // 2)
-
-
 	else:
 		radius = rect.w // max(2, roundness)
 
-		xOffSet = 0
-		yOffSet = (borderWidth // 2) + (radius * 2) - rect.h
+	xOffSet = rect.w - radius * 2 - (borderWidth // 2)
+	yOffSet = rect.h - radius * 2 - (borderWidth // 2)
 
+	offSetRectX = pg.Rect(rect.x + radius, rect.y, rect.w - radius * 2, rect.h)
+	offSetRectY = pg.Rect(rect.x, rect.y + radius, rect.w, rect.h - radius * 2)
 
+	# background
+	pg.draw.rect(surface, backgroundColor, offSetRectX)
+	pg.draw.rect(surface, backgroundColor, offSetRectY)
+
+	# curves
+	# top left
 	pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius, radius, 180, 270, borderColor)
+
+	# top right
 	pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius, radius, 270, 0, borderColor)
-	# pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius - yOffSet, radius, 0, 90, borderColor)
-	# pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius - yOffSet, radius, 90, 180, borderColor)
+
+	# bottom right
+	pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius + yOffSet, radius, 0, 90, borderColor)
+
+	# botton left
+	pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius + yOffSet, radius, 90, 180, borderColor)
+
+	# connecting lines
+	# top
+	pg.draw.line(surface, borderColor, (offSetRectX.x, rect.y), (offSetRectX.x + offSetRectX.w, rect.y), borderWidth)
+
+	# bottom
+	pg.draw.line(surface, borderColor, (offSetRectX.x, rect.y + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - borderWidth // 2), borderWidth)
+
+	# left
+	pg.draw.line(surface, borderColor, (rect.x, offSetRectY.y), (rect.x, offSetRectY.y + offSetRectY.h), borderWidth)
+
+	# right
+	pg.draw.line(surface, borderColor, (rect.x + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h), borderWidth)
 
 
 class RayCast:
@@ -258,7 +282,6 @@ class Polygon:
 		for p in boundingBox:
 			if not ray.Cast((self.center.x - self.center.Direction((p[0], p[1])), self.center.y - self.center.Direction((p[0], p[1]))), (p[0], p[1]), walls):
 				self.pixels.append(p)
-
 
 	def Draw(self):
 		if self.drawCenter:
@@ -684,13 +707,22 @@ def HandleGui(event):
 
 if __name__ == "__main__":
 
+	counter = 2
+
 	def DrawLoop():
+		global counter
 		screen.fill(darkGray)
 
 		DrawAllGUIObjects()
 
-		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), 3)
-		DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), 4)
+		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), int(counter))
+		DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), int(counter))
+		DrawRoundedRect((300, 50, 100, 100), (lightBlue, lightRed), int(counter), 2)
+		DrawRoundedRect((400, 200, 35, 357), (lightBlue, lightRed), int(counter), 3)
+		counter += 0.005
+
+		if counter >= 10:
+			counter = 2
 
 		pg.display.update()
 
