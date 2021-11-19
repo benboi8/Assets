@@ -8,13 +8,10 @@ from pygame import gfxdraw
 pg.init()
 clock = pg.time.Clock()
 
-width, height = 1280, 720
-screen = pg.display.set_mode((width, height))
 running = True
 
-centerOfScreen = (width / 2, height / 2)
-
 fps = 60
+
 
 points = {}
 lines = {}
@@ -25,19 +22,35 @@ allLabels = {}
 allTextBoxs = {}
 allButtons = {}
 
-fontName = "arial"
+
 
 def ChangeFontName(name):
 	global fontName
 	fontName = name
 
 
-def ChangeScreenSize(w, h):
+def ChangeScreenSize(w, h, vsync=1, flags=None):
 	global width, height, screen, centerOfScreen
+	# width, height
 	width, height = w, h
-	screen = pg.display.set_mode((width, height))
+	# screen
+	
+	if flags != None:
+		screen = pg.display.set_mode((width, height), flags, vsync=vsync)
+	else:
+		screen = pg.display.set_mode((width, height), vsync=vsync)
+	
+	# center of screen
 	centerOfScreen = (width / 2, height / 2)
 	return width, height
+
+
+# set up
+# create screen
+ChangeScreenSize(1280, 720)
+# set font
+ChangeFontName("arial")
+
 
 
 def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
@@ -104,9 +117,9 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 
 	# get radius and offsets
 	if rect.w > rect.h:
-		radius = rect.h // max(2, roundness)
+		radius = rect.h // max(2, int(roundness))
 	else:
-		radius = rect.w // max(2, roundness)
+		radius = rect.w // max(2, int(roundness))
 
 	xOffSet = rect.w - radius * 2 - (borderWidth // 2)
 	yOffSet = rect.h - radius * 2 - (borderWidth // 2)
@@ -743,7 +756,7 @@ def HandleGui(event):
 
 if __name__ == "__main__":
 
-	counter = 2
+	counter = 1
 
 	def DrawLoop():
 		global counter
@@ -751,17 +764,17 @@ if __name__ == "__main__":
 
 		DrawAllGUIObjects()
 
-		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), int(counter), 1, activeCorners={"topLeft": False, "topRight": False, "bottomLeft": False, "bottomRight": False})
-		DrawRoundedRect((50, 200, 200, 100), (lightBlue, lightRed), int(counter), 2, activeCorners={"bottomRight": False})
-		DrawRoundedRect((50, 350, 200, 100), (lightBlue, lightRed), int(counter), 3, activeCorners={"bottomLeft": False})
-		DrawRoundedRect((50, 500, 200, 100), (lightBlue, lightRed), int(counter), 4, activeCorners={"topLeft": False, "bottomLeft": False})
-		DrawRoundedRect((300, 50, 200, 100), (lightBlue, lightRed), int(counter), 5, activeCorners={"topRight": False})
-		DrawRoundedRect((300, 200, 200, 100), (lightBlue, lightRed), int(counter), 6, activeCorners={"bottomLeft": False})
-		DrawRoundedRect((300, 350, 200, 100), (lightBlue, lightRed), int(counter), 7, activeCorners={"bottomRight": False})
-		DrawRoundedRect((300, 500, 200, 100), (lightBlue, lightRed), int(counter), 8, activeCorners={})
-		# DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), int(counter), 2)
-		# DrawRoundedRect((300, 50, 100, 100), (lightBlue, lightRed), int(counter), 3)
-		# DrawRoundedRect((400, 200, 35, 357), (lightBlue, lightRed), int(counter), 4)
+		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), counter, 0, activeCorners={"topLeft": False, "topRight": False})
+		DrawRoundedRect((50, 200, 200, 100), (lightBlue, lightRed), int(counter), 1, activeCorners={"bottomRight": False})
+		DrawRoundedRect((50, 350, 200, 100), (lightBlue, lightRed), int(counter), 2, activeCorners={"bottomLeft": False})
+		DrawRoundedRect((50, 500, 200, 100), (lightBlue, lightRed), int(counter), 3, activeCorners={"topLeft": False, "bottomLeft": False})
+		DrawRoundedRect((300, 50, 200, 100), (lightBlue, lightRed), int(counter), 4, activeCorners={"topRight": False})
+		DrawRoundedRect((300, 200, 200, 100), (lightBlue, lightRed), int(counter), 5, activeCorners={"bottomLeft": False})
+		DrawRoundedRect((300, 350, 200, 100), (lightBlue, lightRed), int(counter), 6, activeCorners={"bottomRight": False})
+		DrawRoundedRect((300, 500, 200, 100), (lightBlue, lightRed), int(counter), 7, activeCorners={})
+		DrawRoundedRect((550, 200, 50, 300), (lightBlue, lightRed), int(counter), 2)
+		DrawRoundedRect((550, 50, 100, 100), (lightBlue, lightRed), int(counter), 3)
+		DrawRoundedRect((650, 200, 35, 357), (lightBlue, lightRed), int(counter), 4)
 		counter += 0.005
 
 		if counter >= 10:
