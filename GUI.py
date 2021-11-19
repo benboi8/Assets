@@ -32,14 +32,12 @@ def ChangeFontName(name):
 	fontName = name
 
 
-def ChangeScreenSize(w, h, fullScreen=False):
+def ChangeScreenSize(w, h):
 	global width, height, screen, centerOfScreen
 	width, height = w, h
-	if not fullScreen:
-		screen = pg.display.set_mode((width, height))
-	else:
-		screen = pg.display.set_mode((width, height), pg.FULLSCREEN)
+	screen = pg.display.set_mode((width, height))
 	centerOfScreen = (width / 2, height / 2)
+	return width, height
 
 
 def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
@@ -99,16 +97,12 @@ def AlignText(rect, textSurface, alignment="center", width=2):
 	return pg.Rect(x, y, w, h)
 
 
-def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, surface=screen):
+def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, surface=screen):
 	rect = pg.Rect(rect)
 	backgroundColor = colors[0]
 	borderColor = colors[1]
 
-
-	# draw background
-
-
-	# draw border
+	# get radius and offsets
 	if rect.w > rect.h:
 		radius = rect.h // max(2, roundness)
 	else:
@@ -116,39 +110,81 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, surface=screen):
 
 	xOffSet = rect.w - radius * 2 - (borderWidth // 2)
 	yOffSet = rect.h - radius * 2 - (borderWidth // 2)
-
+	
 	offSetRectX = pg.Rect(rect.x + radius, rect.y, rect.w - radius * 2, rect.h)
 	offSetRectY = pg.Rect(rect.x, rect.y + radius, rect.w, rect.h - radius * 2)
 
-	# background
+	
+	# draw background
 	pg.draw.rect(surface, backgroundColor, offSetRectX)
 	pg.draw.rect(surface, backgroundColor, offSetRectY)
 
+	if activeCorners.get("topLeft", True):
+		pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y), radius)
+	else:
+		pg.draw.rect(surface, backgroundColor, (rect.x, rect.y, abs(rect.x - offSetRectX.x), abs(rect.y - offSetRectY.y)))
+
+	if activeCorners.get("topRight", True):
+		pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y), radius)
+	else:
+		pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, rect.y, abs(rect.w - offSetRectX.w)//2, abs(rect.y - offSetRectY.y)))
+
+	if activeCorners.get("bottomRight", True):
+		pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h), radius)
+	else:
+		pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h, abs(rect.w - offSetRectX.w)//2, abs(rect.h - offSetRectY.h)//2))
+
+	if activeCorners.get("bottomLeft", True):
+		pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y + offSetRectY.h), radius)
+	else:
+		pg.draw.rect(surface, backgroundColor, (rect.x, offSetRectY.y + offSetRectY.h, abs(rect.x - offSetRectX.x), abs(rect.h - offSetRectY.h)//2))
+
+
+	# draw border
 	# curves
-	# top left
-	pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius, radius, 180, 270, borderColor)
+	for i in range(-borderWidth//2, borderWidth//2 + 1):
+		for j in range(-1, 2):
+			if activeCorners.get("topLeft", True):
+				# top left
+				pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
+			else:
+				pg.draw.aaline(surface, borderColor, (rect.x, rect.y + i), (offSetRectX.x, rect.y + i))
+				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y), (rect.x + i, offSetRectY.y))
 
-	# top right
-	pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius, radius, 270, 0, borderColor)
+			if activeCorners.get("topRight", True):
+				# top right
+				pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
+			else:
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
 
-	# bottom right
-	pg.gfxdraw.arc(surface, rect.x + radius + xOffSet, rect.y + radius + yOffSet, radius, 0, 90, borderColor)
+			if activeCorners.get("bottomRight", True):
+				# bottom right
+				pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius - j + yOffSet, radius + (i + j), 0 + i, 90 + i, borderColor)
+			else:
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y + rect.h), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y))
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
 
-	# botton left
-	pg.gfxdraw.arc(surface, rect.x + radius, rect.y + radius + yOffSet, radius, 90, 180, borderColor)
+			if activeCorners.get("bottomLeft", True):
+				# bottom left
+				pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius - j + yOffSet, radius + (i + j), 90 + i, 180 + i, borderColor)
+			else:
+				pg.draw.aaline(surface, borderColor, (rect.x, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
+				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
 
-	# connecting lines
-	# top
-	pg.draw.line(surface, borderColor, (offSetRectX.x, rect.y), (offSetRectX.x + offSetRectX.w, rect.y), borderWidth)
 
-	# bottom
-	pg.draw.line(surface, borderColor, (offSetRectX.x, rect.y + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - borderWidth // 2), borderWidth)
+		# connecting lines
+		# top
+		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
 
-	# left
-	pg.draw.line(surface, borderColor, (rect.x, offSetRectY.y), (rect.x, offSetRectY.y + offSetRectY.h), borderWidth)
+		# bottom
+		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + i + rect.h - borderWidth // 2))
 
-	# right
-	pg.draw.line(surface, borderColor, (rect.x + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h), borderWidth)
+		# left
+		pg.draw.aaline(surface, borderColor, (rect.x + i, offSetRectY.y), (rect.x + i, offSetRectY.y + offSetRectY.h))
+
+		# right
+		pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
 
 
 class RayCast:
@@ -715,10 +751,17 @@ if __name__ == "__main__":
 
 		DrawAllGUIObjects()
 
-		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), int(counter))
-		DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), int(counter))
-		DrawRoundedRect((300, 50, 100, 100), (lightBlue, lightRed), int(counter), 2)
-		DrawRoundedRect((400, 200, 35, 357), (lightBlue, lightRed), int(counter), 3)
+		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), int(counter), 1, activeCorners={"topLeft": False, "topRight": False, "bottomLeft": False, "bottomRight": False})
+		DrawRoundedRect((50, 200, 200, 100), (lightBlue, lightRed), int(counter), 2, activeCorners={"bottomRight": False})
+		DrawRoundedRect((50, 350, 200, 100), (lightBlue, lightRed), int(counter), 3, activeCorners={"bottomLeft": False})
+		DrawRoundedRect((50, 500, 200, 100), (lightBlue, lightRed), int(counter), 4, activeCorners={"topLeft": False, "bottomLeft": False})
+		DrawRoundedRect((300, 50, 200, 100), (lightBlue, lightRed), int(counter), 5, activeCorners={"topRight": False})
+		DrawRoundedRect((300, 200, 200, 100), (lightBlue, lightRed), int(counter), 6, activeCorners={"bottomLeft": False})
+		DrawRoundedRect((300, 350, 200, 100), (lightBlue, lightRed), int(counter), 7, activeCorners={"bottomRight": False})
+		DrawRoundedRect((300, 500, 200, 100), (lightBlue, lightRed), int(counter), 8, activeCorners={})
+		# DrawRoundedRect((200, 200, 50, 300), (lightBlue, lightRed), int(counter), 2)
+		# DrawRoundedRect((300, 50, 100, 100), (lightBlue, lightRed), int(counter), 3)
+		# DrawRoundedRect((400, 200, 35, 357), (lightBlue, lightRed), int(counter), 4)
 		counter += 0.005
 
 		if counter >= 10:
