@@ -29,6 +29,11 @@ def ChangeFontName(name):
 	fontName = name
 
 
+def ChangeFontSize(size):
+	global fontSize
+	fontSize = size
+
+
 def ChangeScreenSize(w, h, vsync=1, flags=None):
 	global width, height, screen, centerOfScreen
 	# width, height
@@ -50,6 +55,7 @@ def ChangeScreenSize(w, h, vsync=1, flags=None):
 ChangeScreenSize(1280, 720)
 # set font
 ChangeFontName("arial")
+ChangeFontSize(24)
 
 
 
@@ -385,17 +391,23 @@ class Box:
 		self.drawBorder = drawData.get("drawBorder", True)
 		self.borderWidth = drawData.get("borderWidth", 2)
 		self.drawBackground = drawData.get("drawBackground", True)
+		self.roundedCorners = drawData.get("roundedCorners", False)
+		self.roundness = drawData.get("roundness", 4)
+		self.activeCorners = drawData.get("activeCorners", {})
 
 		AddToListOrDict(lists, self)
 
 	def Draw(self):
-		# draw background
-		if self.drawBackground:
-			pg.draw.rect(self.surface, self.backgroundColor, self.rect)
+		if not self.roundedCorners:
+			# draw background
+			if self.drawBackground:
+				pg.draw.rect(self.surface, self.backgroundColor, self.rect)
 
-		# draw border
-		if self.drawBorder:
-			DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth, surface=self.surface)
+			# draw border
+			if self.drawBorder:
+				DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth, surface=self.surface)
+		else:
+			DrawRoundedRect(self.rect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
 
 
 class Label(Box):
@@ -403,11 +415,10 @@ class Label(Box):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
 		self.text = text
-		self.fontSize = textData.get("fontSize", 24)
+		self.fontSize = textData.get("fontSize", fontSize)
 		self.fontName = textData.get("fontName", fontName)
 		self.fontColor = textData.get("fontColor", white)
 		self.alignText = textData.get("alignText", "center")
-		self.multiline = textData.get("multiline", False)
 
 		self.CreateTextObj()
 
@@ -419,13 +430,11 @@ class Label(Box):
 			self.font = pg.font.SysFont(self.fontName, self.fontSize)
 		except TypeError:
 			self.font = pg.font.SysFont(self.fontName, self.fontSize)
+		except:
+			print(f"ERROR: Font '{self.fontName}' not found{f' for obj with name {self.name}' if self.name != '' else f'. Obj has no name. Text is: [{self.text}]'}\nEnd of text. Font has defaulted to arial.\n Note that some other error may have occured.")
+			self.font = pg.font.SysFont("arial", self.fontSize)
 
-		if not self.multiline:
-			self.textSurface = self.font.render(str(self.text).strip("\n"), True, self.fontColor)
-			self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
-			self.textObjs.append((self.textSurface, self.textRect))
-		else:
-			self.GetTextObjects()
+		self.GetTextObjects()
 
 	def GetTextObjects(self):
 		self.textObjs = []
@@ -669,11 +678,11 @@ class Button(Label):
 		self.foregroundColor = self.inactiveColor
 		self.toggle = inputData.get("toggle", False)
 
-		self.keyBinds = inputData.get("keyBinds", {"clickType": pg.MOUSEBUTTONDOWN, "active": 1, "releaseType": pg.MOUSEBUTTONUP, "nameType": "mouse"})
+		self.keyBinds = inputData.get("keyBinds", {"activeType": pg.MOUSEBUTTONDOWN, "active": 1, "releaseType": pg.MOUSEBUTTONUP, "nameType": "mouse"})
 
 	def HandleEvent(self, event):
 		if self.rect.collidepoint(pg.mouse.get_pos()):
-			if event.type == self.keyBinds["clickType"]:
+			if event.type == self.keyBinds["activeType"]:
 				if self.keyBinds["nameType"] == "mouse":
 					if event.button == self.keyBinds["active"]:
 						if not self.toggle:
@@ -756,35 +765,19 @@ def HandleGui(event):
 
 if __name__ == "__main__":
 
-	counter = 1
-
 	def DrawLoop():
-		global counter
 		screen.fill(darkGray)
 
 		DrawAllGUIObjects()
-
-		DrawRoundedRect((50, 50, 200, 100), (lightBlue, lightRed), counter, 0, activeCorners={"topLeft": False, "topRight": False})
-		DrawRoundedRect((50, 200, 200, 100), (lightBlue, lightRed), int(counter), 1, activeCorners={"bottomRight": False})
-		DrawRoundedRect((50, 350, 200, 100), (lightBlue, lightRed), int(counter), 2, activeCorners={"bottomLeft": False})
-		DrawRoundedRect((50, 500, 200, 100), (lightBlue, lightRed), int(counter), 3, activeCorners={"topLeft": False, "bottomLeft": False})
-		DrawRoundedRect((300, 50, 200, 100), (lightBlue, lightRed), int(counter), 4, activeCorners={"topRight": False})
-		DrawRoundedRect((300, 200, 200, 100), (lightBlue, lightRed), int(counter), 5, activeCorners={"bottomLeft": False})
-		DrawRoundedRect((300, 350, 200, 100), (lightBlue, lightRed), int(counter), 6, activeCorners={"bottomRight": False})
-		DrawRoundedRect((300, 500, 200, 100), (lightBlue, lightRed), int(counter), 7, activeCorners={})
-		DrawRoundedRect((550, 200, 50, 300), (lightBlue, lightRed), int(counter), 2)
-		DrawRoundedRect((550, 50, 100, 100), (lightBlue, lightRed), int(counter), 3)
-		DrawRoundedRect((650, 200, 35, 357), (lightBlue, lightRed), int(counter), 4)
-		counter += 0.005
-
-		if counter >= 10:
-			counter = 2
 
 		pg.display.update()
 
 	def HandleEvents(event):
 		HandleGui(event)
 
+	Box((50, 50, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
+	Button((50, 270, 100, 100), (lightBlue, lightRed, white), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
 
 	while running:
 		clock.tick_busy_loop(fps)
