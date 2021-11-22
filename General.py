@@ -406,7 +406,6 @@ class NumGrid:
 		AddToListOrDict(lists, self)
 
 	def CreateGrid(self):
-		# if isinstance(self.gridFunc, Func):
 		if callable(self.gridFunc):
 			self.grid = [[self.gridFunc(x, y, self.gridSize[0], self.gridSize[1]) for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]
 		else:
@@ -424,20 +423,24 @@ def Lerp(v0, v1, t):
 
 
 # add an object to a list or a dict
-def AddToListOrDict(lists, obj):
-	for listToAppend in lists:
-		if type(listToAppend) == list:
-			listToAppend.append(obj)
-		elif type(listToAppend) == dict:
-			try:
-				if obj.name == "":
-					name = len(listToAppend)
-				else:
-					name = obj.name
+def AddToListOrDict(lists, obj, key=None):
+	if type(lists) == list:
+		for listToAppend in lists:
+			if type(listToAppend) == list:
+				listToAppend.append(obj)
+			elif type(listToAppend) == dict:
+				try:
+					if key == None:
+						if obj.name == "":
+							name = len(listToAppend)
+						else:
+							name = obj.name
+					else:
+						name = key
 
-				listToAppend[name] = obj
-			except:
-				listToAppend[type(obj)] = obj
+					listToAppend[name] = obj
+				except:
+					listToAppend[type(obj)] = obj
 
 
 # return the current time with a default format

@@ -39,12 +39,12 @@ def ChangeScreenSize(w, h, vsync=1, flags=None):
 	# width, height
 	width, height = w, h
 	# screen
-	
+
 	if flags != None:
 		screen = pg.display.set_mode((width, height), flags, vsync=vsync)
 	else:
 		screen = pg.display.set_mode((width, height), vsync=vsync)
-	
+
 	# center of screen
 	centerOfScreen = (width / 2, height / 2)
 	return width, height
@@ -129,11 +129,11 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 
 	xOffSet = rect.w - radius * 2 - (borderWidth // 2)
 	yOffSet = rect.h - radius * 2 - (borderWidth // 2)
-	
+
 	offSetRectX = pg.Rect(rect.x + radius, rect.y, rect.w - radius * 2, rect.h)
 	offSetRectY = pg.Rect(rect.x, rect.y + radius, rect.w, rect.h - radius * 2)
 
-	
+
 	# draw background
 	pg.draw.rect(surface, backgroundColor, offSetRectX)
 	pg.draw.rect(surface, backgroundColor, offSetRectY)
@@ -420,10 +420,9 @@ class Label(Box):
 		self.fontColor = textData.get("fontColor", white)
 		self.alignText = textData.get("alignText", "center")
 
-		self.CreateTextObj()
+		self.CreateTextObjects()
 
-	def CreateTextObj(self):
-		self.textObjs = []
+	def CreateTextObjects(self):
 		try:
 			self.font = pg.font.Font(self.fontName, self.fontSize)
 		except FileNotFoundError:
@@ -434,9 +433,6 @@ class Label(Box):
 			print(f"ERROR: Font '{self.fontName}' not found{f' for obj with name {self.name}' if self.name != '' else f'. Obj has no name. Text is: [{self.text}]'}\nEnd of text. Font has defaulted to arial.\n Note that some other error may have occured.")
 			self.font = pg.font.SysFont("arial", self.fontSize)
 
-		self.GetTextObjects()
-
-	def GetTextObjects(self):
 		self.textObjs = []
 		self.text = str(self.text)
 		if "\\n" in self.text:
@@ -466,7 +462,7 @@ class Label(Box):
 
 	def UpdateText(self, text):
 		self.text = text
-		self.CreateTextObj()
+		self.CreateTextObjects()
 
 
 class TextInputBox(Label):
