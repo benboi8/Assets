@@ -167,15 +167,15 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 				# top left
 				pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
 			else:
-				pg.draw.aaline(surface, borderColor, (rect.x, rect.y + i), (offSetRectX.x, rect.y + i))
-				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y), (rect.x + i, offSetRectY.y))
+				pg.draw.aaline(surface, borderColor, (rect.x - borderWidth / 2, rect.y + i), (offSetRectX.x, rect.y + i))
+				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y - borderWidth / 2), (rect.x + i, offSetRectY.y))
 
 			if activeCorners.get("topRight", True):
 				# top right
 				pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
 			else:
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - borderWidth / 2, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y - borderWidth / 2), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
 
 			if activeCorners.get("bottomRight", True):
 				# bottom right
@@ -465,201 +465,8 @@ class Label(Box):
 		self.CreateTextObjects()
 
 
+# testing, data validation
 class TextInputBox(Label):
-	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
-		self.splashText = inputData.get("splashText", "Type here.")
-		super().__init__(rect, colors, self.splashText, name, surface, drawData, textData, lists)
-		self.backgroundColor = colors[0]
-		self.inactiveColor = colors[1]
-		self.activeColor = colors[2]
-		self.foregroundColor = self.inactiveColor
-
-		self.textColor = textData.get("textColor", white)
-
-		self.charLimit = inputData.get("charLimit", -1)
-
-		self.input = ""
-
-		self.growRect = drawData.get("growRect", False)
-		self.header = drawData.get("header", False)
-		self.replaceSplashText = drawData.get("replaceSplashText", True)
-
-		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFile", None)
-		self.allowedKeysFilePath = inputData.get("allowedKeysFile", None)
-
-		self.nonAllowedKeysList = inputData.get("nonAllowedKeysList", [])
-		self.allowedKeysList = inputData.get("allowedKeysList", [])
-
-		self.nonAllowedKeys = set()
-		self.allowedKeys = set()
-
-		self.pointer = len(self.text)
-
-		self.GetKeys()
-
-		if type(self.header) == str:
-			self.MakeHeader()
-
-		self.active = False
-
-	def MakeHeader(self):
-		self.headerTextSurface = self.font.render(self.header, True, self.textColor)
-		self.headerRect = AlignText(self.rect, self.headerTextSurface, "center-top", self.borderWidth)
-		self.rect.h += self.headerTextSurface.get_height() // 2
-		try:
-			if self.alignText.split("-")[1] == "top":
-				self.alignText = self.alignText.split("-")[0]
-		except:
-			pass
-
-	def GetKeys(self):
-		if self.nonAllowedKeysFilePath != None:
-			with open(self.nonAllowedKeysFilePath, "r") as nonAllowedKeysFile:
-				nonAllowedKeysText = nonAllowedKeysFile.read()
-				for char in nonAllowedKeysText:
-					self.nonAllowedKeys.add(char)
-
-		for char in self.nonAllowedKeysList:
-			self.nonAllowedKeys.add(char)
-
-		if self.allowedKeysFilePath != None:
-			with open(self.allowedKeysFilePath, "r") as allowedKeysFile:
-				allowedKeysText = allowedKeysFile.read()
-				for char in allowedKeysText:
-					self.allowedKeys.add(char)
-
-		for char in self.allowedKeysList:
-			self.allowedKeys.add(char)
-
-	def HandleEvent(self, event):
-		if event.type == pg.MOUSEBUTTONDOWN:
-			if event.button == 1:
-				if self.rect.collidepoint(pg.mouse.get_pos()):
-					self.pointer = len(self.text)
-					self.active = not self.active
-					if self.active:
-						self.foregroundColor = self.activeColor
-					else:
-						self.foregroundColor = self.inactiveColor
-				else:
-					self.active = False
-					self.foregroundColor = self.inactiveColor
-
-		if event.type == pg.KEYDOWN:
-			if event.key == pg.K_RETURN:
-				self.active = False
-				self.foregroundColor = self.inactiveColor
-
-			if event.key == pg.K_RIGHT:
-				self.pointer = min(len(self.text), self.pointer + 1)
-			if event.key == pg.K_LEFT:
-				if not self.replaceSplashText:
-					self.pointer = max(len(self.splashText), self.pointer - 1)
-				else:
-					self.pointer = max(0, self.pointer - 1)
-
-		if self.active:
-			self.HandleKeyboard(event)
-
-	def HandleKeyboard(self, event):
-		if self.active:
-			if self.replaceSplashText:
-				textLength = len(self.text)
-			else:
-				textLength = len(self.text) - len(self.splashText)
-
-			if event.type == pg.KEYDOWN:
-				if event.key == pg.K_BACKSPACE:
-					if textLength != 0 and self.text != self.splashText:
-						self.text = self.text[: self.pointer - 1] + self.text[self.pointer :]
-						self.pointer = max(len(self.splashText), self.pointer - 1)
-				elif event.key == pg.K_DELETE:
-					if textLength != 0 and self.text != self.splashText:
-						self.text = self.text[: self.pointer] + self.text[self.pointer + 1:]
-				else:
-					if event.key != pg.K_LEFT and event.key != pg.K_RIGHT:
-						self.FilterText(event.unicode)
-
-				if self.text == "":
-					self.text = self.splashText
-				self.UpdateText()
-
-		if self.replaceSplashText:
-			self.input = self.text
-		else:
-			self.input = self.text[len(self.splashText):]
-
-	def FilterText(self, key):
-		if self.replaceSplashText:
-			textLength = len(self.text)
-		else:
-			textLength = len(self.text) - len(self.splashText)
-
-		if textLength + 1 <= self.charLimit or self.charLimit == -1:
-			if self.replaceSplashText:
-				if self.text == self.splashText:
-					self.text = ""
-
-			if len(self.nonAllowedKeys) == 0:
-				if len(self.allowedKeys) == 0:
-					if self.pointer == len(self.text):
-						self.text += key
-					else:
-						self.text = self.text[: self.pointer] + key + self.text[self.pointer:]
-					self.pointer = min(len(self.text), self.pointer + 1)
-
-				else:
-					if key in self.allowedKeys:
-						if self.pointer == len(self.text):
-							self.text += key
-						else:
-							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
-						self.pointer = min(len(self.text), self.pointer + 1)
-
-			else:
-				if len(self.allowedKeys) == 0:
-					if key not in self.nonAllowedKeys:
-						if key in self.allowedKeys:
-							if self.pointer == len(self.text):
-								self.text += key
-							else:
-								self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
-							self.pointer = min(len(self.text), self.pointer + 1)
-
-				else:
-					if key not in self.nonAllowedKeys:
-						if self.pointer == len(self.text):
-							self.text += key
-						else:
-							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
-						self.pointer = min(len(self.text), self.pointer + 1)
-
-	def Draw(self):
-		pg.draw.rect(self.surface, self.backgroundColor, self.rect)
-		DrawRectOutline(self.foregroundColor, self.rect, surface=self.surface, width=self.borderWidth)
-
-		if self.active:
-			if dt.datetime.now().microsecond % 1000000 > 500000:
-				pg.draw.rect(self.surface, self.textColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y, 2, self.textSurface.get_height()))
-
-		self.surface.blit(self.textSurface, self.textRect)
-
-		if type(self.header) == str:
-			self.surface.blit(self.headerTextSurface, self.headerRect)
-
-	def ClearText(self):
-		self.text = self.splashText
-		self.input = self.text
-		self.UpdateText()
-
-	def UpdateText(self):
-		self.textSurface = self.font.render(self.text, True, self.textColor)
-		if self.growRect:
-			self.rect.w = max(self.rect.w, self.textSurface.get_width() + 12)
-
-
-
-class TextInput(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
 		self.splashText = splashText
 		super().__init__(rect, colors, self.splashText, name, surface, drawData, textData, lists)
@@ -720,6 +527,7 @@ class TextInput(Label):
 					self.active = not self.active
 					if self.active:
 						self.foregroundColor = self.activeColor
+						self.activeTime = dt.datetime.now()
 					else:
 						self.foregroundColor = self.inactiveColor
 				else:
@@ -770,8 +578,8 @@ class TextInput(Label):
 		else:
 			self.input = self.text[len(self.splashText):]
 
-
 	def FilterText(self, key):
+		self.activeTime = dt.datetime.now()
 		if self.replaceSplashText:
 			textLength = len(self.text)
 		else:
@@ -782,15 +590,36 @@ class TextInput(Label):
 				if self.text == self.splashText:
 					self.text = ""
 
-			if len(self.nonAllowedKeys) == 0:
-				if len(self.allowedKeys) == 0:
+		if self.font.render(str(self.text + key), True, self.fontColor).get_width() + 2 >= self.rect.w:
+			return
+
+		if len(self.nonAllowedKeys) == 0:
+			if len(self.allowedKeys) == 0:
+				if self.pointer == len(self.text):
+					self.text += key
+				else:
+					self.text = self.text[: self.pointer] + key + self.text[self.pointer:]
+				self.pointer = min(len(self.text), self.pointer + 1)
+
+			else:
+				if key in self.allowedKeys:
 					if self.pointer == len(self.text):
 						self.text += key
 					else:
-						self.text = self.text[: self.pointer] + key + self.text[self.pointer:]
+						self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
 					self.pointer = min(len(self.text), self.pointer + 1)
 
-				else:
+		else:
+			if len(self.allowedKeys) == 0:
+				if key not in self.nonAllowedKeys:
+					if self.pointer == len(self.text):
+						self.text += key
+					else:
+						self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
+					self.pointer = min(len(self.text), self.pointer + 1)
+
+			else:
+				if key not in self.nonAllowedKeys:
 					if key in self.allowedKeys:
 						if self.pointer == len(self.text):
 							self.text += key
@@ -798,24 +627,7 @@ class TextInput(Label):
 							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
 						self.pointer = min(len(self.text), self.pointer + 1)
 
-			else:
-				if len(self.allowedKeys) == 0:
-					if key not in self.nonAllowedKeys:
-						if key in self.allowedKeys:
-							if self.pointer == len(self.text):
-								self.text += key
-							else:
-								self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
-							self.pointer = min(len(self.text), self.pointer + 1)
-
-				else:
-					if key not in self.nonAllowedKeys:
-						if self.pointer == len(self.text):
-							self.text += key
-						else:
-							self.text = self.text[: self.pointer] + key + self.text[self.pointer :]
-						self.pointer = min(len(self.text), self.pointer + 1)
-		self.text += key
+		self.UpdateText(self.text)
 
 	def Draw(self):
 		self.DrawBackground()
@@ -832,8 +644,14 @@ class TextInput(Label):
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
 
 		if self.active:
-			# if dt.datetime.now().second % 2 == 0:
-			pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
+			if dt.datetime.now().microsecond % 1000000 > 500000 or (dt.datetime.now() - self.activeTime).seconds <= 2:
+				pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
+
+	def UpdateText(self, text):
+		self.text = text
+		self.CreateTextObjects()
+		self.textSurface = self.font.render(str(self.text), True, self.fontColor)
+		self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
 
 
 class Button(Label):
@@ -949,11 +767,11 @@ if __name__ == "__main__":
 	def HandleEvents(event):
 		HandleGui(event)
 
-	# Box((50, 50, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	# Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
-	# Button((50, 270, 100, 100), (lightBlue, lightRed, white), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
-	TextInput((50, 380, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"}, inputData={"nonAllowedKeysFilePath": "input keys/special.txt"})
-	TextInput((50, 450, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": None}, inputData={"nonAllowedKeysFilePath": "input keys/special.txt"})
+	Box((50, 50, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
+	Button((50, 270, 100, 100), (lightBlue, lightRed, white), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
+	TextInputBox((50, 450, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
+	TextInputBox((50, 500, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
 	while running:
 		clock.tick_busy_loop(fps)
