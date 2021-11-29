@@ -81,6 +81,12 @@ def RecursiveReadDict(d, returnData=[]):
 	return returnData
 
 
+def SplitFileFromFolderPath(path):
+	path = path.replace("/", "\\")
+	paths = path.split("\\")
+	return "\\".join(paths[:-1]) + "\\", paths[-1].split(".")[0], paths[-1].split(".")[1]
+
+
 def GetPath(folder, fileName, fileType):
 	if fileType == "":
 		if "." in fileName:
@@ -105,7 +111,7 @@ def GetPath(folder, fileName, fileType):
 	return f"{folder}{fileName}{fileType}", folder, fileName, fileType
 
 
-def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolderOrFile=True):
+def SaveData(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolderOrFile=True):
 	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
 
 	if not CheckFolderExists(folder):
@@ -169,7 +175,7 @@ def Save(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolde
 	return True
 
 
-def Load(fileName, folder="", fileType=""):
+def OpenFile(fileName, folder="", fileType=""):
 	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
 
 	if not CheckFolderExists(folder):
@@ -255,9 +261,4 @@ def ConvertStringToType(txt):
 
 
 if __name__ == "__main__":
-	Save("file", {"one": 1, "two": 2}, folder="/saves", fileType=".json", fileIOType="w", createNewFolderOrFile=False)
-	print(Load("file", "/saves", ".json"))
-
-	print("\n----------\n")
-
-	print(TxtToJson("one:{four:{five:[1, 2, 3]}}\ntwo:[2, 3, 4]\nthree:(3, 4, 5)\n"))
+	pass
