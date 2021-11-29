@@ -21,7 +21,7 @@ allBoxs = {}
 allLabels = {}
 allTextBoxs = {}
 allButtons = {}
-
+allSliders = {}
 
 
 def ChangeFontName(name):
@@ -192,7 +192,7 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
 
 
-		# connecting lines
+		# connecting d
 		# top
 		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
 
@@ -204,6 +204,21 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 
 		# right
 		pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
+
+
+def MoveRectWithoutCenter(startPos, startRect):
+	# get current mouse pos
+	mouseX, mouseY = pg.mouse.get_pos()
+
+	# get difference from start x and start y to mouse cursor for movement
+	differenceX = startPos[0] - startRect.x
+	differenceY = startPos[1] - startRect.y
+
+	# get new pos
+	x = mouseX - differenceX
+	y = mouseY - differenceY
+
+	return pg.Rect(x, y, startRect.w, startRect.h)
 
 
 class RayCast:
@@ -723,36 +738,177 @@ class Button(Label):
 		self.foregroundColor = self.inactiveColor
 
 
+class Slider(Label):
+	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders]):
+		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
+		self.inactiveColor = colors[1]
+		self.activeColor = colors[2]
+
+		self.isVertical = inputData.get("isVertical", True if self.rect.w < self.rect.h else False)
+		self.sliderButtonSize = drawData.get("sliderButtonSize", [self.rect.w / 10, self.rect.h] if not self.isVertical else [self.rect.w, self.rect.h / 10])
+
+		self.buttonData = buttonData
+
+		self.headerFontColor = textData.get("headerFontColor", self.fontColor)
+		self.headerAlignText = textData.get("headerAlignText", "center")
+		self.headerOffSet = textData.get("headerOffSet", [0, 0])
+
+		self.header = drawData.get("header", False)
+
+		if type(self.header) == str:
+			self.MakeHeader()
+
+		self.CreateSliderButton()
+
+	def MakeHeader(self):
+		self.headerTextSurface = self.font.render(self.header, True, self.headerFontColor)
+
+		if not self.isVertical:
+			self.headerRect = pg.Rect(self.rect.x + self.headerOffSet[0], self.rect.y - (self.rect.h + self.borderWidth + self.headerOffSet[1]), self.rect.w, self.rect.h)
+		else:
+			self.headerRect = pg.Rect(self.rect.x - (self.rect.h // 2) + (self.rect.w//2), self.rect.y - self.rect.w - 2, self.rect.h, self.rect.w)
+
+		self.headerTextRect = AlignText(self.headerRect, self.headerTextSurface, self.headerAlignText, self.borderWidth)
+
+	def CreateSliderButton(self):
+		if self.isVertical:
+			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0] - self.borderWidth * 2, self.sliderButtonSize[1])
+		else:
+			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
+
+		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.inactiveColor), self.buttonData.get("activeColor", self.activeColor)), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+
+	def GetMousePos(self):
+		self.startMousePos = pg.mouse.get_pos()
+		self.startSliderButtonRect = pg.Rect(self.sliderButton.rect)
+
+	def Draw(self):
+		self.DrawBackground()
+		self.DrawBorder()
+
+		self.sliderButton.Draw()
+
+		if type(self.header) == str:
+			pg.draw.rect(self.surface, self.backgroundColor, self.headerRect)
+			if not self.roundedCorners:
+				DrawRectOutline(self.foregroundColor, self.headerRect, self.borderWidth, surface=self.surface)
+			else:
+				DrawRoundedRect(self.headerRect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+
+			self.surface.blit(self.headerTextSurface, self.headerTextRect)
+
+
+	def HandleEvent(self, event):
+		self.sliderButton.HandleEvent(event)
+
+		if self.sliderButton.active:
+			rect = MoveRectWithoutCenter(self.startMousePos, self.startSliderButtonRect)
+			if not self.isVertical:
+				self.sliderButton.rect.x = max(min(rect.x, self.rect.x + self.rect.w - self.borderWidth * 2 - self.sliderButton.rect.w), self.rect.x + self.borderWidth)
+			else:
+				self.sliderButton.rect.y = max(min(rect.y, self.rect.y + self.rect.h - self.borderWidth * 2 - self.sliderButton.rect.h), self.rect.y + self.borderWidth)
+
+		self.GetValue()
+
+	def GetValue(self, n=3):
+		if not self.isVertical:
+			self.value = round((self.sliderButton.rect.x - self.rect.x - self.borderWidth) / (self.rect.w - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
+		else:
+			self.value = round((self.sliderButton.rect.y - self.rect.y - self.borderWidth) / (self.rect.h - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
+
+		return self.value
+
+
 def DrawAllGUIObjects():
-	for key in points:
-		points[key].Draw()
+	if type(points) == dict:
+		for key in points:
+			points[key].Draw()
 
-	for key in lines:
-		lines[key].Draw()
+	elif type(points) == list:
+		for obj in points:
+			obj.Draw()
 
-	for key in polygons:
-		polygons[key].Draw()
+	if type(lines) == dict:
+		for key in lines:
+			lines[key].Draw()
 
-	for key in allBoxs:
-		allBoxs[key].Draw()
+	elif type(lines) == list:
+		for obj in lines:
+			obj.Draw()
 
-	for key in allLabels:
-		allLabels[key].Draw()
-		allLabels[key].DrawText()
+	if type(polygons) == dict:
+		for key in polygons:
+			polygons[key].Draw()
 
-	for key in allTextBoxs:
-		allTextBoxs[key].Draw()
+	elif type(polygons) == list:
+		for obj in polygons:
+			obj.Draw()
 
-	for key in allButtons:
-		allButtons[key].Draw()
+	if type(allBoxs) == dict:
+		for key in allBoxs:
+			allBoxs[key].Draw()
+
+	elif type(allBoxs) == list:
+		for obj in allBoxs:
+			obj.Draw()
+
+	if type(allLabels) == dict:
+		for key in allLabels:
+			allLabels[key].Draw()
+			allLabels[key].DrawText()
+
+	elif type(allLabels) == list:
+		for obj in allLabels:
+			obj.Draw()
+			obj.DrawText()
+
+	if type(allTextBoxs) == dict:
+		for key in allTextBoxs:
+			allTextBoxs[key].Draw()
+
+	elif type(allTextBoxs) == list:
+		for obj in allTextBoxs:
+			obj.Draw()
+
+	if type(allButtons) == dict:
+		for key in allButtons:
+			allButtons[key].Draw()
+
+	elif type(allButtons) == list:
+		for obj in allButtons:
+			obj.Draw()
+
+	if type(allSliders) == dict:
+		for key in allSliders:
+			allSliders[key].Draw()
+
+	elif type(allSliders) == list:
+		for obj in allSliders:
+			obj.Draw()
 
 
 def HandleGui(event):
-	for key in allTextBoxs:
-		allTextBoxs[key].HandleEvent(event)
+	if type(allTextBoxs) == dict:
+		for key in allTextBoxs:
+			allTextBoxs[key].HandleEvent(event)
+	else:
+		for obj in allTextBoxs:
+			obj.HandleEvent(event)
 
-	for key in allButtons:
-		allButtons[key].HandleEvent(event)
+	if type(allButtons) == dict:
+		for key in allButtons:
+			allButtons[key].HandleEvent(event)
+	else:
+		for obj in allButtons:
+			obj.HandleEvent(event)
+
+	if type(allSliders) == dict:
+		for key in allSliders:
+			allSliders[key].HandleEvent(event)
+	else:
+		for obj in allSliders:
+			obj.HandleEvent(event)
+
 
 
 if __name__ == "__main__":
@@ -768,10 +924,15 @@ if __name__ == "__main__":
 		HandleGui(event)
 
 	Box((50, 50, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 4, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
+	Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
 	Button((50, 270, 100, 100), (lightBlue, lightRed, white), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
 	TextInputBox((50, 450, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
 	TextInputBox((50, 500, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
+
+	Slider((50, 600, 300, 35), (lightBlack, lightRed, white), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((360, 400, 35, 300), (lightBlack, lightRed, white), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((50, 650, 300, 35), (lightBlack, lightRed, white), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((440, 410, 35, 290), (lightBlack, lightRed, white), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
 
 	while running:
 		clock.tick_busy_loop(fps)
