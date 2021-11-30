@@ -575,17 +575,22 @@ class TextInputBox(Label):
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_BACKSPACE:
 					if textLength != 0 and self.text != self.splashText:
-						self.text = self.text[: self.pointer - 1] + self.text[self.pointer :]
-						self.pointer = max(len(self.splashText), self.pointer - 1)
+						if self.pointer > 0:
+							self.text = self.text[: self.pointer - 1] + self.text[self.pointer :]
+							self.pointer = max(0, self.pointer - 1)
+
 				elif event.key == pg.K_DELETE:
 					if textLength != 0 and self.text != self.splashText:
 						self.text = self.text[: self.pointer] + self.text[self.pointer + 1:]
+
 				else:
-					if event.key != pg.K_LEFT and event.key != pg.K_RIGHT:
+					if event.key != pg.K_LEFT and event.key != pg.K_RIGHT and event.key != pg.K_TAB and event.key != pg.K_ESCAPE:
 						self.FilterText(event.unicode)
 
 				if self.text == "":
 					self.text = self.splashText
+					self.pointer = len(self.text)
+
 				self.UpdateText(self.text)
 
 		if self.replaceSplashText:
@@ -741,8 +746,6 @@ class Button(Label):
 class Slider(Label):
 	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders]):
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
-		self.inactiveColor = colors[1]
-		self.activeColor = colors[2]
 
 		self.isVertical = inputData.get("isVertical", True if self.rect.w < self.rect.h else False)
 		self.sliderButtonSize = drawData.get("sliderButtonSize", [self.rect.w / 10, self.rect.h] if not self.isVertical else [self.rect.w, self.rect.h / 10])
@@ -776,7 +779,7 @@ class Slider(Label):
 		else:
 			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
 
-		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.inactiveColor), self.buttonData.get("activeColor", self.activeColor)), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.foregroundColor), self.buttonData.get("activeColor", ReverseColor(self.foregroundColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
 
 	def GetMousePos(self):
 		self.startMousePos = pg.mouse.get_pos()
@@ -929,10 +932,10 @@ if __name__ == "__main__":
 	TextInputBox((50, 450, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
 	TextInputBox((50, 500, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
-	Slider((50, 600, 300, 35), (lightBlack, lightRed, white), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((360, 400, 35, 300), (lightBlack, lightRed, white), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((50, 650, 300, 35), (lightBlack, lightRed, white), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((440, 410, 35, 290), (lightBlack, lightRed, white), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((50, 600, 300, 35), (lightBlack, lightRed), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((360, 400, 35, 300), (lightBlack, lightRed), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((50, 650, 300, 35), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((440, 410, 35, 290), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
 
 	while running:
 		clock.tick_busy_loop(fps)

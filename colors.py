@@ -32,3 +32,5 @@ def ScaleColorElement(minColorElement, maxColorElement, t):
 def ScaleColor(color1, color2, t):
 	return (Lerp(color1[0], color2[0], t), Lerp(color1[1], color2[1], t), Lerp(color1[2], color2[2], t))
 
+def ReverseColor(color):
+	return (255 - color[0], 255 - color[1], 255 - color[2])
