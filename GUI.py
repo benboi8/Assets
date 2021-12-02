@@ -22,6 +22,8 @@ allLabels = {}
 allTextBoxs = {}
 allButtons = {}
 allSliders = {}
+allScrollBars = {}
+allMessageBoxs = {}
 
 
 def ChangeFontName(name):
@@ -192,7 +194,7 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
 
 
-		# connecting d
+		# connecting lines
 		# top
 		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
 
@@ -465,6 +467,7 @@ class Label(Box):
 		for i, t in enumerate(text):
 			textSurface = self.font.render(str(t), True, self.fontColor)
 			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + (i * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
+			self.textHeight = textSurface.get_height()
 
 	def Draw(self):
 		self.DrawBackground()
@@ -480,7 +483,7 @@ class Label(Box):
 		self.CreateTextObjects()
 
 
-# testing, data validation
+# testing, data validation - spell checking
 class TextInputBox(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
 		self.splashText = splashText
@@ -497,6 +500,7 @@ class TextInputBox(Label):
 		self.growRect = drawData.get("growRect", False)
 		self.header = drawData.get("header", False)
 		self.replaceSplashText = drawData.get("replaceSplashText", True)
+		self.cursorTime = drawData.get("cursorTime", self.DefaultCursorTime)
 
 		self.charLimit = inputData.get("charLimit", -1)
 
@@ -664,8 +668,11 @@ class TextInputBox(Label):
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
 
 		if self.active:
-			if dt.datetime.now().microsecond % 1000000 > 500000 or (dt.datetime.now() - self.activeTime).seconds <= 2:
+			if self.cursorTime():
 				pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
+
+	def DefaultCursorTime(self):
+		return dt.datetime.now().microsecond % 1000000 > 500000 or (dt.datetime.now() - self.activeTime).seconds <= 2
 
 	def UpdateText(self, text):
 		self.text = text
@@ -743,6 +750,7 @@ class Button(Label):
 		self.foregroundColor = self.inactiveColor
 
 
+# testing - value change function
 class Slider(Label):
 	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders]):
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
@@ -779,7 +787,7 @@ class Slider(Label):
 		else:
 			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
 
-		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.foregroundColor), self.buttonData.get("activeColor", ReverseColor(self.foregroundColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.foregroundColor), self.buttonData.get("activeColor", InvertColor(self.foregroundColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
 
 	def GetMousePos(self):
 		self.startMousePos = pg.mouse.get_pos()
@@ -792,14 +800,13 @@ class Slider(Label):
 		self.sliderButton.Draw()
 
 		if type(self.header) == str:
-			pg.draw.rect(self.surface, self.backgroundColor, self.headerRect)
 			if not self.roundedCorners:
+				pg.draw.rect(self.surface, self.backgroundColor, self.headerRect)
 				DrawRectOutline(self.foregroundColor, self.headerRect, self.borderWidth, surface=self.surface)
 			else:
 				DrawRoundedRect(self.headerRect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
 
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
-
 
 	def HandleEvent(self, event):
 		self.sliderButton.HandleEvent(event)
@@ -820,6 +827,64 @@ class Slider(Label):
 			self.value = round((self.sliderButton.rect.y - self.rect.y - self.borderWidth) / (self.rect.h - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
 
 		return self.value
+
+
+# scroll bar - scroll obj / scroll function
+class ScollBar(Slider):
+	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allScrollBars]):
+		super().__init__(rect, colors, name="", surface=screen, drawData=drawData, textData=textData, inputData=inputData, buttonData=buttonData, lists=lists)
+
+
+# message box - message title, message box
+class MessageBox(Label):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs]):
+		super().__init__(rect, colors, text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=lists)
+
+		confirmButtonRect = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
+		confirmButtonColors = confirmButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
+		confirmButtonTextData = confirmButtonData.get("textData", {})
+		self.confirmButton = Button((self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]), confirmButtonColors, onClick = confirmButtonData.get("onClick", self.Confirm), onClickArgs = confirmButtonData.get("onclickArgs", []), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
+
+		cancelButtonRect = cancelButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
+		cancelButtonColors = cancelButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
+		cancelButtonTextData = cancelButtonData.get("textData", {})
+		self.cancelButton = Button((self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]), cancelButtonColors, onClick = cancelButtonData.get("onClick", self.Cancel), onClickArgs = cancelButtonData.get("onclickArgs", []), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
+
+		messageBoxButtonColors = messageBoxData.get("colors", (colors[0], colors[1]))
+		messageBoxButtonTextData = messageBoxData.get("textData", {})
+		self.messageBox = Label((self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonRect[1]), messageBoxButtonColors, text = messageBoxData.get("text", "Message box"), name=messageBoxData.get("name", f"{self.name}-messageBox"), surface=self.surface, drawData=drawData, textData=messageBoxButtonTextData, lists=[])
+
+	def Draw(self):
+		self.DrawBackground()
+		self.DrawBorder()
+		self.DrawText()
+
+		self.confirmButton.Draw()
+		self.cancelButton.Draw()
+		self.messageBox.Draw()
+
+	def HandleEvent(self, event):
+		self.confirmButton.HandleEvent(event)
+		self.cancelButton.HandleEvent(event)
+
+	def Confirm(self):
+		if __name__ == '__main__':
+			print("Confirm")
+
+	def Cancel(self):
+		if __name__ == '__main__':
+			print("Cancel")
+
+
+# switch
+
+# multiselect button
+
+# radio button
+
+# dropdown menu
+
+# large text input box
 
 
 def DrawAllGUIObjects():
@@ -889,6 +954,22 @@ def DrawAllGUIObjects():
 		for obj in allSliders:
 			obj.Draw()
 
+	if type(allScrollBars) == dict:
+		for key in allScrollBars:
+			allScrollBars[key].Draw()
+
+	elif type(allScrollBars) == list:
+		for obj in allScrollBars:
+			obj.Draw()
+
+	if type(allMessageBoxs) == dict:
+		for key in allMessageBoxs:
+			allMessageBoxs[key].Draw()
+
+	elif type(allMessageBoxs) == list:
+		for obj in allMessageBoxs:
+			obj.Draw()
+
 
 def HandleGui(event):
 	if type(allTextBoxs) == dict:
@@ -912,6 +993,20 @@ def HandleGui(event):
 		for obj in allSliders:
 			obj.HandleEvent(event)
 
+	if type(allScrollBars) == dict:
+		for key in allScrollBars:
+			allScrollBars[key].HandleEvent(event)
+	else:
+		for obj in allScrollBars:
+			obj.HandleEvent(event)
+
+	if type(allMessageBoxs) == dict:
+		for key in allMessageBoxs:
+			allMessageBoxs[key].HandleEvent(event)
+	else:
+		for obj in allMessageBoxs:
+			obj.HandleEvent(event)
+
 
 
 if __name__ == "__main__":
@@ -926,16 +1021,21 @@ if __name__ == "__main__":
 	def HandleEvents(event):
 		HandleGui(event)
 
-	Box((50, 50, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Label((50, 160, 100, 100), (lightBlue, lightRed), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": black})
-	Button((50, 270, 100, 100), (lightBlue, lightRed, white), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
-	TextInputBox((50, 450, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
-	TextInputBox((50, 500, 300, 35), (lightBlack, lightRed, white), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
+	Box((50, 50, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Label((50, 160, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
+	Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
+	TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
+	TextInputBox((50, 500, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
-	Slider((50, 600, 300, 35), (lightBlack, lightRed), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((360, 400, 35, 300), (lightBlack, lightRed), drawData={"header": "HEADER"}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((50, 650, 300, 35), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
-	Slider((440, 410, 35, 290), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightBlue})
+	Slider((50, 600, 300, 35), (lightBlack, darkWhite), drawData={"header": "HEADER", "borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
+	Slider((360, 400, 35, 300), (lightBlack, darkWhite), drawData={"header": "HEADER", "borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
+	Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+
+	# ScollBar((500, 600, 300, 35), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
+	# ScollBar((810, 400, 35, 300), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
+
+	MessageBox((200, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
 
 	while running:
 		clock.tick_busy_loop(fps)
