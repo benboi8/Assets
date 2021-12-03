@@ -14,4 +14,4 @@ https://outlook.live.com/mail/0/notes
 
 - hyperlink
 - shift color brightness by percentage
-- add enabled var for gui objects
+- add disabled var for gui objects
