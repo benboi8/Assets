@@ -1039,6 +1039,8 @@ if __name__ == "__main__":
 	def DrawLoop():
 		screen.fill(darkGray)
 
+		b.backgroundColor = ChangeColorBrightness(lightBlack, i)
+
 		DrawAllGUIObjects()
 
 		pg.display.update()
@@ -1046,7 +1048,11 @@ if __name__ == "__main__":
 	def HandleEvents(event):
 		HandleGui(event)
 
-	Box((50, 50, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	i = 0
+	reverse = False
+
+	Box((10, 50, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	b = Box((120, 50, 100, 100), (ChangeColorBrightness((255, 255, 255), i), white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
 	Label((50, 160, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
 	Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
 	TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
@@ -1060,9 +1066,9 @@ if __name__ == "__main__":
 	# ScollBar((500, 600, 300, 35), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
 	# ScollBar((810, 400, 35, 300), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
 
-	MessageBox((200, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
+	MessageBox((230, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
 
-	HyperLink((510, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
+	HyperLink((540, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
 
 	while running:
 		clock.tick_busy_loop(fps)
@@ -1077,3 +1083,13 @@ if __name__ == "__main__":
 			HandleEvents(event)
 
 		DrawLoop()
+
+		if i >= 100:
+			reverse = True
+		elif i <= 0:
+			reverse = False
+
+		if reverse:
+			i -= 1
+		else:
+			i += 1
