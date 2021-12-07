@@ -5,6 +5,8 @@ import pygame as pg
 from pygame import *
 from pygame import gfxdraw
 
+import webbrowser
+
 pg.init()
 clock = pg.time.Clock()
 
@@ -24,7 +26,7 @@ allButtons = {}
 allSliders = {}
 allScrollBars = {}
 allMessageBoxs = {}
-
+allHyperLinks = {}
 
 def ChangeFontName(name):
 	global fontName
@@ -876,6 +878,14 @@ class MessageBox(Label):
 			print("Cancel")
 
 
+class HyperLink(Button):
+	def __init__(self, rect, colors, url, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allHyperLinks]):
+		super().__init__(rect, colors, self.OpenLink, [url], text if text != "" else url, name, surface, drawData, textData, inputData, lists)
+
+	def OpenLink(self, url):
+		webbrowser.open(url, new=2, autoraise=True)
+
+
 # switch
 
 # multiselect button
@@ -970,6 +980,14 @@ def DrawAllGUIObjects():
 		for obj in allMessageBoxs:
 			obj.Draw()
 
+	if type(allHyperLinks) == dict:
+		for key in allHyperLinks:
+			allHyperLinks[key].Draw()
+
+	elif type(allHyperLinks) == list:
+		for obj in allHyperLinks:
+			obj.Draw()
+
 
 def HandleGui(event):
 	if type(allTextBoxs) == dict:
@@ -1007,6 +1025,13 @@ def HandleGui(event):
 		for obj in allMessageBoxs:
 			obj.HandleEvent(event)
 
+	if type(allHyperLinks) == dict:
+		for key in allHyperLinks:
+			allHyperLinks[key].HandleEvent(event)
+	else:
+		for obj in allHyperLinks:
+			obj.HandleEvent(event)
+
 
 
 if __name__ == "__main__":
@@ -1036,6 +1061,8 @@ if __name__ == "__main__":
 	# ScollBar((810, 400, 35, 300), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
 
 	MessageBox((200, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
+
+	HyperLink((510, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
 
 	while running:
 		clock.tick_busy_loop(fps)
