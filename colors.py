@@ -34,3 +34,6 @@ def ScaleColor(color1, color2, t):
 
 def InvertColor(color):
 	return (255 - color[0], 255 - color[1], 255 - color[2])
+
+def ChangeColorBrightness(color, percentage):
+	return (color[0] * (max(min(percentage, 100), 0) / 100), color[1] * (max(min(percentage, 100), 0) / 100), color[2] * (max(min(percentage, 100), 0) / 100))

@@ -175,7 +175,6 @@ def SaveData(fileName, data, folder="/", fileType="", fileIOType="w", createNewF
 	return True
 
 
-
 def OpenFile(fileName, folder="", fileType=""):
 	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
 
