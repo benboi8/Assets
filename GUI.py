@@ -41,6 +41,7 @@ allMultiselectButtons = {}
 allCollections = {}
 allExpandableMenus = {}
 
+
 def ChangeFontName(name):
 	global fontName
 	fontName = name
@@ -133,7 +134,7 @@ def AlignText(rect, textSurface, alignment="center", width=2):
 	return pg.Rect(x, y, w, h)
 
 
-def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, surface=screen):
+def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, surface=screen, drawBorder=True, drawBackground=True):
 	rect = pg.Rect(rect)
 	backgroundColor = colors[0]
 	borderColor = colors[1]
@@ -152,75 +153,77 @@ def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, 
 
 
 	# draw background
-	pg.draw.rect(surface, backgroundColor, offSetRectX)
-	pg.draw.rect(surface, backgroundColor, offSetRectY)
+	if drawBackground:
+		pg.draw.rect(surface, backgroundColor, offSetRectX)
+		pg.draw.rect(surface, backgroundColor, offSetRectY)
 
-	if activeCorners.get("topLeft", True):
-		pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y), radius)
-	else:
-		pg.draw.rect(surface, backgroundColor, (rect.x, rect.y, abs(rect.x - offSetRectX.x), abs(rect.y - offSetRectY.y)))
+		if activeCorners.get("topLeft", True):
+			pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y), radius)
+		else:
+			pg.draw.rect(surface, backgroundColor, (rect.x, rect.y, abs(rect.x - offSetRectX.x), abs(rect.y - offSetRectY.y)))
 
-	if activeCorners.get("topRight", True):
-		pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y), radius)
-	else:
-		pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, rect.y, abs(rect.w - offSetRectX.w)//2, abs(rect.y - offSetRectY.y)))
+		if activeCorners.get("topRight", True):
+			pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y), radius)
+		else:
+			pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, rect.y, abs(rect.w - offSetRectX.w)//2, abs(rect.y - offSetRectY.y)))
 
-	if activeCorners.get("bottomRight", True):
-		pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h), radius)
-	else:
-		pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h, abs(rect.w - offSetRectX.w)//2, abs(rect.h - offSetRectY.h)//2))
+		if activeCorners.get("bottomRight", True):
+			pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h), radius)
+		else:
+			pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h, abs(rect.w - offSetRectX.w)//2, abs(rect.h - offSetRectY.h)//2))
 
-	if activeCorners.get("bottomLeft", True):
-		pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y + offSetRectY.h), radius)
-	else:
-		pg.draw.rect(surface, backgroundColor, (rect.x, offSetRectY.y + offSetRectY.h, abs(rect.x - offSetRectX.x), abs(rect.h - offSetRectY.h)//2))
+		if activeCorners.get("bottomLeft", True):
+			pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y + offSetRectY.h), radius)
+		else:
+			pg.draw.rect(surface, backgroundColor, (rect.x, offSetRectY.y + offSetRectY.h, abs(rect.x - offSetRectX.x), abs(rect.h - offSetRectY.h)//2))
 
 
 	# draw border
 	# curves
-	for i in range(-borderWidth//2, borderWidth//2 + 1):
-		for j in range(-1, 2):
-			if activeCorners.get("topLeft", True):
-				# top left
-				pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
-			else:
-				pg.draw.aaline(surface, borderColor, (rect.x - borderWidth / 2, rect.y + i), (offSetRectX.x, rect.y + i))
-				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y - borderWidth / 2), (rect.x + i, offSetRectY.y))
+	if drawBorder:
+		for i in range(-borderWidth//2, borderWidth//2 + 1):
+			for j in range(-1, 2):
+				if activeCorners.get("topLeft", True):
+					# top left
+					pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
+				else:
+					pg.draw.aaline(surface, borderColor, (rect.x - borderWidth / 2, rect.y + i), (offSetRectX.x, rect.y + i))
+					pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y - borderWidth / 2), (rect.x + i, offSetRectY.y))
 
-			if activeCorners.get("topRight", True):
-				# top right
-				pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
-			else:
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - borderWidth / 2, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y - borderWidth / 2), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
+				if activeCorners.get("topRight", True):
+					# top right
+					pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
+				else:
+					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - borderWidth / 2, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y - borderWidth / 2), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
 
-			if activeCorners.get("bottomRight", True):
-				# bottom right
-				pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius - j + yOffSet, radius + (i + j), 0 + i, 90 + i, borderColor)
-			else:
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y + rect.h), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y))
-				pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
+				if activeCorners.get("bottomRight", True):
+					# bottom right
+					pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius - j + yOffSet, radius + (i + j), 0 + i, 90 + i, borderColor)
+				else:
+					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y + rect.h), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y))
+					pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
 
-			if activeCorners.get("bottomLeft", True):
-				# bottom left
-				pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius - j + yOffSet, radius + (i + j), 90 + i, 180 + i, borderColor)
-			else:
-				pg.draw.aaline(surface, borderColor, (rect.x, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
-				pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
+				if activeCorners.get("bottomLeft", True):
+					# bottom left
+					pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius - j + yOffSet, radius + (i + j), 90 + i, 180 + i, borderColor)
+				else:
+					pg.draw.aaline(surface, borderColor, (rect.x, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
+					pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
 
 
-		# connecting lines
-		# top
-		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+			# connecting lines
+			# top
+			pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
 
-		# bottom
-		pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + i + rect.h - borderWidth // 2))
+			# bottom
+			pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + i + rect.h - borderWidth // 2))
 
-		# left
-		pg.draw.aaline(surface, borderColor, (rect.x + i, offSetRectY.y), (rect.x + i, offSetRectY.y + offSetRectY.h))
+			# left
+			pg.draw.aaline(surface, borderColor, (rect.x + i, offSetRectY.y), (rect.x + i, offSetRectY.y + offSetRectY.h))
 
-		# right
-		pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
+			# right
+			pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
 
 
 def MoveRectWithoutCenter(startPos, startRect):
@@ -434,18 +437,16 @@ class Box:
 		self.DrawBorder()
 
 	def DrawBackground(self):
-		if not self.roundedCorners:
-			# draw background
-			if self.drawBackground:
+		if self.drawBackground:
+			if not self.roundedCorners:
 				pg.draw.rect(self.surface, self.backgroundColor, self.rect)
 
 	def DrawBorder(self):
 		if not self.roundedCorners:
-			# draw border
 			if self.drawBorder:
 				DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth, surface=self.surface)
 		else:
-			DrawRoundedRect(self.rect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+			DrawRoundedRect(self.rect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface, drawBorder=self.drawBorder, drawBackground=self.drawBackground)
 
 
 class Label(Box):
@@ -457,6 +458,8 @@ class Label(Box):
 		self.fontName = textData.get("fontName", fontName)
 		self.fontColor = textData.get("fontColor", white)
 		self.alignText = textData.get("alignText", "center")
+
+		self.scrollLevel = 0
 
 		self.CreateTextObjects()
 
@@ -471,6 +474,17 @@ class Label(Box):
 			print(f"ERROR: Font '{self.fontName}' not found{f' for obj with name {self.name}' if self.name != '' else f'. Obj has no name. Text is: [{self.text}]'}\nEnd of text. Font has defaulted to arial.\n Note that some other error may have occured.")
 			self.font = pg.font.SysFont("arial", self.fontSize)
 
+		# -- test --
+		if not ("\n" in self.text or "\\n" in self.text):
+			if self.font.render(self.text, True, self.fontColor).get_width() >= self.rect.w:
+				oneCharWidth = self.font.render("W", True, self.fontColor).get_width()
+				total = 0
+				for i, char in enumerate(self.text):
+					total += 1
+					if char == " " and total * oneCharWidth > self.rect.w:
+						self.text = f"{self.text[:i]}\n{self.text[i+1:]}"
+						total = 0
+
 		self.textObjs = []
 		self.text = str(self.text)
 		if "\\n" in self.text:
@@ -484,6 +498,9 @@ class Label(Box):
 			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + (i * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
 			self.textHeight = textSurface.get_height()
 
+		if self.name == "test":
+			print(len(self.textObjs))
+
 	def Draw(self):
 		self.DrawBackground()
 		self.DrawBorder()
@@ -491,14 +508,15 @@ class Label(Box):
 
 	def DrawText(self):
 		for obj in self.textObjs:
-			self.surface.blit(obj[0], obj[1])
+			rect = pg.Rect(obj[1][0], obj[1][1] - (self.scrollLevel * obj[0].get_height()), obj[0].get_width(), obj[0].get_height())
+			if self.rect.x < rect.x and self.rect.y < rect.y and self.rect.x + self.rect.w > rect.x + rect.w and self.rect.y + self.rect.h > rect.y + rect.h:
+				self.surface.blit(obj[0], rect)
 
 	def UpdateText(self, text):
 		self.text = text
 		self.CreateTextObjects()
 
 
-# testing, data validation - spell checking
 class TextInputBox(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
 		self.splashText = splashText
@@ -540,6 +558,9 @@ class TextInputBox(Label):
 		self.textSurface = self.font.render(str(self.text), True, self.fontColor)
 		self.textRect = AlignText(self.rect, self.textSurface, self.alignText, self.borderWidth)
 
+		self.t = 0
+		self.step = 0.05
+
 	def MakeHeader(self):
 		self.headerTextSurface = self.font.render(self.header, True, self.headerFontColor)
 		self.headerRect = pg.Rect(self.rect.x + self.headerOffSet[0], self.rect.y - (self.rect.h + self.borderWidth + self.headerOffSet[1]), self.rect.w, self.rect.h)
@@ -573,11 +594,9 @@ class TextInputBox(Label):
 				file.close()
 
 	def HandleEvent(self, event):
-		self.backgroundColor = self.ogBackgroundColor
-		if self.rect.collidepoint(pg.mouse.get_pos()):
-			self.backgroundColor = ChangeColorBrightness(self.backgroundColor, self.darkenPercentage)
-			if event.type == pg.MOUSEBUTTONDOWN:
-				if event.button == 1:
+		if event.type == pg.MOUSEBUTTONDOWN:
+			if event.button == 1:
+				if self.rect.collidepoint(pg.mouse.get_pos()):
 					if type(allTextBoxs) == dict:
 						for key in allTextBoxs:
 							if allTextBoxs[key] != self:
@@ -598,7 +617,9 @@ class TextInputBox(Label):
 						self.activeTime = dt.datetime.now()
 					else:
 						self.foregroundColor = self.inactiveColor
-
+				else:
+					self.active = False
+					self.foregroundColor = self.inactiveColor
 
 		if event.type == pg.KEYDOWN:
 			if event.key == pg.K_RETURN:
@@ -705,6 +726,19 @@ class TextInputBox(Label):
 		self.DrawBorder()
 		self.DrawText()
 
+		if self.rect.collidepoint(pg.mouse.get_pos()):
+			if self.t < 1:
+				self.t += self.step
+
+			self.t = min(max(self.t, 0), 1)
+			self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
+		else:
+			if self.t > 0:
+				self.t -= self.step
+
+			self.t = min(max(self.t, 0), 1)
+			self.backgroundColor = LerpColor(self.backgroundColor, self.ogBackgroundColor, self.t)
+
 		if type(self.header) == str:
 			pg.draw.rect(self.surface, self.ogBackgroundColor, self.headerRect)
 			if not self.roundedCorners:
@@ -749,12 +783,30 @@ class Button(Label):
 
 		self.keyBinds = inputData.get("keyBinds", {"activeType": pg.MOUSEBUTTONDOWN, "active": 1, "releaseType": pg.MOUSEBUTTONUP, "nameType": "mouse"})
 
-	def HandleEvent(self, event):
-		self.backgroundColor = self.ogBackgroundColor
+		self.t = 0
+		self.step = 0.05
+
+	def Draw(self):
+		self.DrawBackground()
+		self.DrawBorder()
+		self.DrawText()
+
 		if self.rect.collidepoint(pg.mouse.get_pos()):
+			if self.t < 1:
+				self.t += self.step
 
-			self.backgroundColor = ChangeColorBrightness(self.backgroundColor, self.darkenPercentage)
+			self.t = min(max(self.t, 0), 1)
+			self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
+		else:
+			if self.t > 0:
+				self.t -= self.step
 
+			self.t = min(max(self.t, 0), 1)
+			self.backgroundColor = LerpColor(self.backgroundColor, self.ogBackgroundColor, self.t)
+
+
+	def HandleEvent(self, event):
+		if self.rect.collidepoint(pg.mouse.get_pos()):
 			if event.type == self.keyBinds["activeType"]:
 				if self.keyBinds["nameType"] == "mouse":
 					if event.button == self.keyBinds["active"]:
@@ -804,7 +856,7 @@ class Button(Label):
 		self.foregroundColor = self.inactiveColor
 
 
-# testing - value change function
+# slider - value change button rect function - test
 class Slider(Label):
 	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders]):
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
@@ -883,13 +935,60 @@ class Slider(Label):
 		return self.value
 
 
-# scroll bar - scroll obj / scroll function - test
 class ScollBar(Slider):
-	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allScrollBars]):
-		super().__init__(rect, colors, name="", surface=screen, drawData=drawData, textData=textData, inputData=inputData, buttonData=buttonData, lists=lists)
+	def __init__(self, rect, colors, scrollObj, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, keyBinds={}, lists=[allScrollBars]):
+		self.scrollObj = scrollObj
+		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, inputData=inputData, buttonData=buttonData, lists=lists)
+
+		self.keyBinds = keyBinds
+		self.scrollObj = scrollObj
+
+	def HandleEvent(self, event):
+		self.sliderButton.HandleEvent(event)
+
+		if self.sliderButton.active:
+			rect = MoveRectWithoutCenter(self.startMousePos, self.startSliderButtonRect)
+			if not self.isVertical:
+				self.sliderButton.rect.x = max(min(rect.x, self.rect.x + self.rect.w - self.borderWidth * 2 - self.sliderButton.rect.w), self.rect.x + self.borderWidth)
+			else:
+				self.sliderButton.rect.y = max(min(rect.y, self.rect.y + self.rect.h - self.borderWidth * 2 - self.sliderButton.rect.h), self.rect.y + self.borderWidth)
+
+			self.Scroll()
+
+		if self.rect.collidepoint(pg.mouse.get_pos()) or self.scrollObj.rect.collidepoint(pg.mouse.get_pos()):
+			if event.type == pg.MOUSEBUTTONDOWN:
+				# down
+				if event.button == 5:
+					self.ScrollDown()
+				# up
+				if event.button == 4:
+					self.ScrollUp()
+
+			if event.type == pg.KEYDOWN:
+				if event.key == self.keyBinds.get("scrollDown", pg.K_DOWN):
+					self.ScrollDown()
+
+				if event.key == self.keyBinds.get("scrollUp", pg.K_UP):
+					self.ScrollUp()
+
+		self.GetValue()
+
+	def ScrollUp(self):
+		if hasattr(self.scrollObj, "scrollLevel"):
+			if self.scrollObj.scrollLevel - 1 >= 0:
+				self.scrollObj.scrollLevel -= 1
+
+	def ScrollDown(self):
+		if hasattr(self.scrollObj, "scrollLevel"):
+			if self.scrollObj.scrollLevel + 1 <= len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight//2):
+				self.scrollObj.scrollLevel += 1
+
+	def Scroll(self):
+		if hasattr(self.scrollObj, "scrollLevel"):
+			self.GetValue()
+			self.scrollObj.scrollLevel = max(0, self.value * len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight//2))
 
 
-# message box - message title, message box
 class MessageBox(Label):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs]):
 		super().__init__(rect, colors, text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=lists)
@@ -897,12 +996,12 @@ class MessageBox(Label):
 		confirmButtonRect = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		confirmButtonColors = confirmButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		confirmButtonTextData = confirmButtonData.get("textData", {})
-		self.confirmButton = Button((self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]), confirmButtonColors, onClick = confirmButtonData.get("onClick", self.Confirm), onClickArgs = confirmButtonData.get("onclickArgs", []), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
+		self.confirmButton = Button((self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]), confirmButtonColors, onClick = confirmButtonData.get("onClick", print), onClickArgs = confirmButtonData.get("onclickArgs", ["confirm"]), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
 
 		cancelButtonRect = cancelButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		cancelButtonColors = cancelButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		cancelButtonTextData = cancelButtonData.get("textData", {})
-		self.cancelButton = Button((self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]), cancelButtonColors, onClick = cancelButtonData.get("onClick", self.Cancel), onClickArgs = cancelButtonData.get("onclickArgs", []), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
+		self.cancelButton = Button((self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]), cancelButtonColors, onClick = cancelButtonData.get("onClick", print), onClickArgs = cancelButtonData.get("onclickArgs", ["cancel"]), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
 
 		messageBoxButtonColors = messageBoxData.get("colors", (colors[0], colors[1]))
 		messageBoxButtonTextData = messageBoxData.get("textData", {})
@@ -921,14 +1020,6 @@ class MessageBox(Label):
 		self.confirmButton.HandleEvent(event)
 		self.cancelButton.HandleEvent(event)
 
-	def Confirm(self):
-		if __name__ == '__main__':
-			print("Confirm")
-
-	def Cancel(self):
-		if __name__ == '__main__':
-			print("Cancel")
-
 
 class HyperLink(Button):
 	def __init__(self, rect, colors, url, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allHyperLinks]):
@@ -938,7 +1029,6 @@ class HyperLink(Button):
 		webbrowser.open(url, new=2, autoraise=True)
 
 
-# switch
 class Switch(Box):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allSwitches]):
 		super().__init__(rect, colors, name, surface, drawData, lists)
@@ -976,21 +1066,22 @@ class Switch(Box):
 		if self.header != None:
 			self.header.Draw()
 
-		self.firstChoice.DrawBackground()
-		self.firstChoice.DrawBorder()
-		self.lastChoice.DrawBackground()
-		self.lastChoice.DrawBorder()
+		self.firstChoice.Draw()
+		self.lastChoice.Draw()
 
 		if self.roundedCorners:
-			DrawRoundedRect((self.activeChoice.rect.x + self.borderWidth, self.activeChoice.rect.y + self.borderWidth, self.activeChoice.rect.w - self.borderWidth * 2, self.activeChoice.rect.h - self.borderWidth * 2), (self.activeChoice.activeColor, self.activeChoice.activeColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+			if self.activeChoice.t <= 0.7:
+				self.activeChoice.t = 0.7
+			DrawRoundedRect((self.activeChoice.rect.x + self.borderWidth, self.activeChoice.rect.y + self.borderWidth, self.activeChoice.rect.w - self.borderWidth * 2, self.activeChoice.rect.h - self.borderWidth * 2), (LerpColor(self.activeChoice.activeColor, ChangeColorBrightness(self.activeChoice.activeColor, 80), self.activeChoice.t / 0.5), LerpColor(self.activeChoice.activeColor, ChangeColorBrightness(self.activeChoice.activeColor, 80), self.activeChoice.t / 0.5)), self.roundness, self.borderWidth, self.activeCorners, self.surface)
 		else:
-			pg.draw.rect(self.surface, self.activeChoice.activeColor, (self.activeChoice.rect.x + self.borderWidth, self.activeChoice.rect.y + self.borderWidth, self.activeChoice.rect.w - self.borderWidth * 2, self.activeChoice.rect.h - self.borderWidth * 2))
+			if self.activeChoice.t <= 0.7:
+				self.activeChoice.t = 0.7
+			pg.draw.rect(self.surface, LerpColor(self.activeChoice.activeColor, ChangeColorBrightness(self.activeChoice.activeColor, 80), self.activeChoice.t / 0.5), (self.activeChoice.rect.x + self.borderWidth, self.activeChoice.rect.y + self.borderWidth, self.activeChoice.rect.w - self.borderWidth * 2, self.activeChoice.rect.h - self.borderWidth * 2))
 
 		self.firstChoice.DrawText()
 		self.lastChoice.DrawText()
 
 
-# multiselect button
 class MultiselectButton(Label):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, optionData={}, lists=[allMultiselectButtons]):
 		try:
@@ -1068,7 +1159,6 @@ class MultiselectButton(Label):
 # large text input box
 
 
-# collection
 class Collection:
 	def __init__(self, objects=[], name="", addToList=True):
 		self.objects = objects
@@ -1087,7 +1177,6 @@ class Collection:
 				obj.HandleEvent(event)
 
 
-# expandable menu
 class ExpandableMenu(Box):
 	def __init__(self, rect, colors, openButton=None, name="", surface=screen, drawData={}, textData={}, inputData={}, closedData={}, openData={}, options=Collection(), lists=[allExpandableMenus]):
 		super().__init__(rect, colors, name, surface, drawData, lists)
@@ -1359,8 +1448,10 @@ if __name__ == "__main__":
 	Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
 	Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
 
-	# ScollBar((500, 600, 300, 35), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
-	# ScollBar((810, 400, 35, 300), (lightBlack, lightRed), buttonData={"backgroundColor": black, "inactiveColor": black, "activeColor": lightRed})
+	scroll_label_1 = Label((540, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
+	scroll_label_2 = Label((700, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
+	ScollBar((540, 640, 150, 25), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_1, name="horizontal")
+	ScollBar((850, 490, 25, 150), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_2, name="vertical")
 
 	MessageBox((180, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
 
@@ -1384,17 +1475,17 @@ if __name__ == "__main__":
 		], addToList=False)
 
 	c2 = Collection([
-		Label((1015, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5}),
-		Button((965, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5})
+		Label((865, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+		Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1})
 		], addToList=False)
 
 	ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
-	ExpandableMenu((960, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5}})
+	ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
 
 	while running:
 		clock.tick_busy_loop(fps)
@@ -1409,3 +1500,5 @@ if __name__ == "__main__":
 			HandleEvents(event)
 
 		DrawLoop()
+
+

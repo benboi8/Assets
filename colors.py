@@ -26,10 +26,10 @@ pink = (204, 126, 183)
 def RandomColor(minR = 0, minG = 0, minB = 0, maxR = 255, maxG = 255, maxB = 255):
 	return (randint(minR, maxR), randint(minG, maxG), randint(minB, maxB))
 
-def ScaleColorElement(minColorElement, maxColorElement, t):
+def LerpColorElement(minColorElement, maxColorElement, t):
 	return Lerp(minColorElement, maxColorElement, t)
 
-def ScaleColor(color1, color2, t):
+def LerpColor(color1, color2, t):
 	return (Lerp(color1[0], color2[0], t), Lerp(color1[1], color2[1], t), Lerp(color1[2], color2[2], t))
 
 def InvertColor(color):
