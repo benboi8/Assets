@@ -515,6 +515,7 @@ class Label(Box):
 	def UpdateText(self, text):
 		self.text = text
 		self.CreateTextObjects()
+		self.scrollLevel = len(self.textObjs) - (self.rect.h / self.textHeight) if (self.rect.h / self.textHeight) < len(self.textObjs) else 0
 
 
 class TextInputBox(Label):
@@ -534,7 +535,7 @@ class TextInputBox(Label):
 		self.growRect = drawData.get("growRect", False)
 		self.header = drawData.get("header", False)
 		self.replaceSplashText = drawData.get("replaceSplashText", True)
-		self.cursorTime = drawData.get("cursorTime", self.DefaultCursorTime)
+		self.CursorTime = drawData.get("CursorTime", self.DefaultCursorTime)
 
 		self.darkenPercentage = drawData.get("darkenPercentage", 80)
 
@@ -542,6 +543,7 @@ class TextInputBox(Label):
 
 		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFilePath", None)
 		self.allowedKeysFilePath = inputData.get("allowedKeysFilePath", None)
+		self.closeOnMisInput = inputData.get("closeOnMisInput", True)
 
 		self.nonAllowedKeys = set()
 		self.allowedKeys = set()
@@ -618,13 +620,15 @@ class TextInputBox(Label):
 					else:
 						self.foregroundColor = self.inactiveColor
 				else:
-					self.active = False
-					self.foregroundColor = self.inactiveColor
+					if self.closeOnMisInput:
+						self.active = False
+						self.foregroundColor = self.inactiveColor
 
 		if event.type == pg.KEYDOWN:
 			if event.key == pg.K_RETURN:
-				self.active = False
-				self.foregroundColor = self.inactiveColor
+				if self.closeOnMisInput:
+					self.active = False
+					self.foregroundColor = self.inactiveColor
 
 			if event.key == pg.K_RIGHT:
 				self.pointer = min(len(self.text), self.pointer + 1)
@@ -749,7 +753,7 @@ class TextInputBox(Label):
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
 
 		if self.active:
-			if self.cursorTime():
+			if self.CursorTime():
 				pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
 
 	def DefaultCursorTime(self):
@@ -964,12 +968,16 @@ class ScollBar(Slider):
 				if event.button == 4:
 					self.ScrollUp()
 
+				self.UpdateRect()
+
 			if event.type == pg.KEYDOWN:
 				if event.key == self.keyBinds.get("scrollDown", pg.K_DOWN):
 					self.ScrollDown()
 
 				if event.key == self.keyBinds.get("scrollUp", pg.K_UP):
 					self.ScrollUp()
+
+				self.UpdateRect()
 
 		self.GetValue()
 
@@ -980,13 +988,22 @@ class ScollBar(Slider):
 
 	def ScrollDown(self):
 		if hasattr(self.scrollObj, "scrollLevel"):
-			if self.scrollObj.scrollLevel + 1 <= len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight//2):
+			if self.scrollObj.scrollLevel + 1 <= len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight // 2):
 				self.scrollObj.scrollLevel += 1
 
 	def Scroll(self):
 		if hasattr(self.scrollObj, "scrollLevel"):
 			self.GetValue()
-			self.scrollObj.scrollLevel = max(0, self.value * len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight//2))
+			self.scrollObj.scrollLevel = max(0, self.value * len(self.scrollObj.textObjs) - (self.scrollObj.rect.h / self.scrollObj.textHeight // 2))
+
+	def UpdateRect(self):
+		try:
+			if not self.isVertical:
+				self.sliderButton.rect.x = self.rect.x + self.borderWidth + (self.scrollObj.scrollLevel / (len(self.scrollObj.textObjs) - 3) * (self.rect.w - self.sliderButton.rect.w - (self.borderWidth * 2)))
+			else:
+				self.sliderButton.rect.y = self.rect.y + self.borderWidth + (self.scrollObj.scrollLevel / (len(self.scrollObj.textObjs) - 3) * (self.rect.h - self.sliderButton.rect.h - (self.borderWidth * 2)))
+		except ZeroDivisionError:
+			pass
 
 
 class MessageBox(Label):
@@ -1154,9 +1171,12 @@ class MultiselectButton(Label):
 
 # radio button
 
+
 # dropdown menu
 
+
 # large text input box
+
 
 
 class Collection:
@@ -1500,5 +1520,3 @@ if __name__ == "__main__":
 			HandleEvents(event)
 
 		DrawLoop()
-
-
