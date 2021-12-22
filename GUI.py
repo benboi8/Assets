@@ -37,6 +37,7 @@ allMessageBoxs = {}
 allHyperLinks = {}
 allSwitches = {}
 allMultiselectButtons = {}
+allProgressBars = {}
 
 allCollections = {}
 allExpandableMenus = {}
@@ -135,95 +136,98 @@ def AlignText(rect, textSurface, alignment="center", width=2):
 
 
 def DrawRoundedRect(rect, colors, roundness=2, borderWidth=2, activeCorners={}, surface=screen, drawBorder=True, drawBackground=True):
-	rect = pg.Rect(rect)
-	backgroundColor = colors[0]
-	borderColor = colors[1]
+	try:
+		rect = pg.Rect(rect)
+		backgroundColor = colors[0]
+		borderColor = colors[1]
 
-	# get radius and offsets
-	if rect.w > rect.h:
-		radius = rect.h // max(2, int(roundness))
-	else:
-		radius = rect.w // max(2, int(roundness))
-
-	xOffSet = rect.w - radius * 2 - (borderWidth // 2)
-	yOffSet = rect.h - radius * 2 - (borderWidth // 2)
-
-	offSetRectX = pg.Rect(rect.x + radius, rect.y, rect.w - radius * 2, rect.h)
-	offSetRectY = pg.Rect(rect.x, rect.y + radius, rect.w, rect.h - radius * 2)
-
-
-	# draw background
-	if drawBackground:
-		pg.draw.rect(surface, backgroundColor, offSetRectX)
-		pg.draw.rect(surface, backgroundColor, offSetRectY)
-
-		if activeCorners.get("topLeft", True):
-			pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y), radius)
+		# get radius and offsets
+		if rect.w > rect.h:
+			radius = rect.h // max(2, int(roundness))
 		else:
-			pg.draw.rect(surface, backgroundColor, (rect.x, rect.y, abs(rect.x - offSetRectX.x), abs(rect.y - offSetRectY.y)))
+			radius = rect.w // max(2, int(roundness))
 
-		if activeCorners.get("topRight", True):
-			pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y), radius)
-		else:
-			pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, rect.y, abs(rect.w - offSetRectX.w)//2, abs(rect.y - offSetRectY.y)))
+		xOffSet = rect.w - radius * 2 - (borderWidth // 2)
+		yOffSet = rect.h - radius * 2 - (borderWidth // 2)
 
-		if activeCorners.get("bottomRight", True):
-			pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h), radius)
-		else:
-			pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h, abs(rect.w - offSetRectX.w)//2, abs(rect.h - offSetRectY.h)//2))
-
-		if activeCorners.get("bottomLeft", True):
-			pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y + offSetRectY.h), radius)
-		else:
-			pg.draw.rect(surface, backgroundColor, (rect.x, offSetRectY.y + offSetRectY.h, abs(rect.x - offSetRectX.x), abs(rect.h - offSetRectY.h)//2))
+		offSetRectX = pg.Rect(rect.x + radius, rect.y, rect.w - radius * 2, rect.h)
+		offSetRectY = pg.Rect(rect.x, rect.y + radius, rect.w, rect.h - radius * 2)
 
 
-	# draw border
-	# curves
-	if drawBorder:
-		for i in range(-borderWidth//2, borderWidth//2 + 1):
-			for j in range(-1, 2):
-				if activeCorners.get("topLeft", True):
-					# top left
-					pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
-				else:
-					pg.draw.aaline(surface, borderColor, (rect.x - borderWidth / 2, rect.y + i), (offSetRectX.x, rect.y + i))
-					pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y - borderWidth / 2), (rect.x + i, offSetRectY.y))
+		# draw background
+		if drawBackground:
+			pg.draw.rect(surface, backgroundColor, offSetRectX)
+			pg.draw.rect(surface, backgroundColor, offSetRectY)
 
-				if activeCorners.get("topRight", True):
-					# top right
-					pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
-				else:
-					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - borderWidth / 2, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
-					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y - borderWidth / 2), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
+			if activeCorners.get("topLeft", True):
+				pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y), radius)
+			else:
+				pg.draw.rect(surface, backgroundColor, (rect.x, rect.y, abs(rect.x - offSetRectX.x), abs(rect.y - offSetRectY.y)))
 
-				if activeCorners.get("bottomRight", True):
-					# bottom right
-					pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius - j + yOffSet, radius + (i + j), 0 + i, 90 + i, borderColor)
-				else:
-					pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y + rect.h), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y))
-					pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
+			if activeCorners.get("topRight", True):
+				pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y), radius)
+			else:
+				pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, rect.y, abs(rect.w - offSetRectX.w)//2, abs(rect.y - offSetRectY.y)))
 
-				if activeCorners.get("bottomLeft", True):
-					# bottom left
-					pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius - j + yOffSet, radius + (i + j), 90 + i, 180 + i, borderColor)
-				else:
-					pg.draw.aaline(surface, borderColor, (rect.x, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
-					pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
+			if activeCorners.get("bottomRight", True):
+				pg.draw.circle(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h), radius)
+			else:
+				pg.draw.rect(surface, backgroundColor, (offSetRectX.x + offSetRectX.w, offSetRectY.y + offSetRectY.h, abs(rect.w - offSetRectX.w)//2, abs(rect.h - offSetRectY.h)//2))
+
+			if activeCorners.get("bottomLeft", True):
+				pg.draw.circle(surface, backgroundColor, (offSetRectX.x, offSetRectY.y + offSetRectY.h), radius)
+			else:
+				pg.draw.rect(surface, backgroundColor, (rect.x, offSetRectY.y + offSetRectY.h, abs(rect.x - offSetRectX.x), abs(rect.h - offSetRectY.h)//2))
 
 
-			# connecting lines
-			# top
-			pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+		# draw border
+		# curves
+		if drawBorder:
+			for i in range(-borderWidth//2, borderWidth//2 + 1):
+				for j in range(-1, 2):
+					if activeCorners.get("topLeft", True):
+						# top left
+						pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius + j, radius + (i + j), 180 + i, 270 + i, borderColor)
+					else:
+						pg.draw.aaline(surface, borderColor, (rect.x - borderWidth / 2, rect.y + i), (offSetRectX.x, rect.y + i))
+						pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y - borderWidth / 2), (rect.x + i, offSetRectY.y))
 
-			# bottom
-			pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + i + rect.h - borderWidth // 2))
+					if activeCorners.get("topRight", True):
+						# top right
+						pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius + j, radius + (i + j), 270 + i, 0 + i, borderColor)
+					else:
+						pg.draw.aaline(surface, borderColor, (rect.x + rect.w - borderWidth / 2, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+						pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y - borderWidth / 2), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y + offSetRectY.h))
 
-			# left
-			pg.draw.aaline(surface, borderColor, (rect.x + i, offSetRectY.y), (rect.x + i, offSetRectY.y + offSetRectY.h))
+					if activeCorners.get("bottomRight", True):
+						# bottom right
+						pg.gfxdraw.arc(surface, rect.x + radius - j + xOffSet, rect.y + radius - j + yOffSet, radius + (i + j), 0 + i, 90 + i, borderColor)
+					else:
+						pg.draw.aaline(surface, borderColor, (rect.x + rect.w - (borderWidth // 2) + i, rect.y + rect.h), (rect.x + rect.w - (borderWidth // 2) + i, offSetRectY.y))
+						pg.draw.aaline(surface, borderColor, (rect.x + rect.w, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
 
-			# right
-			pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
+					if activeCorners.get("bottomLeft", True):
+						# bottom left
+						pg.gfxdraw.arc(surface, rect.x + radius + j, rect.y + radius - j + yOffSet, radius + (i + j), 90 + i, 180 + i, borderColor)
+					else:
+						pg.draw.aaline(surface, borderColor, (rect.x, rect.y + rect.h - (borderWidth // 2) + i), (offSetRectX.x + offSetRectX.w, rect.y + rect.h - (borderWidth // 2) + i))
+						pg.draw.aaline(surface, borderColor, (rect.x + i, rect.y + rect.h), (rect.x + i, offSetRectY.y + offSetRectY.h))
+
+
+				# connecting lines
+				# top
+				pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i), (offSetRectX.x + offSetRectX.w, rect.y + i))
+
+				# bottom
+				pg.draw.aaline(surface, borderColor, (offSetRectX.x, rect.y + i + rect.h - borderWidth // 2), (offSetRectX.x + offSetRectX.w, rect.y + i + rect.h - borderWidth // 2))
+
+				# left
+				pg.draw.aaline(surface, borderColor, (rect.x + i, offSetRectY.y), (rect.x + i, offSetRectY.y + offSetRectY.h))
+
+				# right
+				pg.draw.aaline(surface, borderColor, (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y), (rect.x + i + rect.w - borderWidth // 2, offSetRectY.y + offSetRectY.h))
+	except:
+		pass
 
 
 def MoveRectWithoutCenter(startPos, startRect):
@@ -424,9 +428,9 @@ class Box:
 		self.drawData = drawData
 
 		self.drawBorder = drawData.get("drawBorder", True)
-		self.borderWidth = drawData.get("borderWidth", 2)
 		self.drawBackground = drawData.get("drawBackground", True)
 		self.roundedCorners = drawData.get("roundedCorners", False)
+		self.borderWidth = drawData.get("borderWidth", 1 if self.roundedCorners else 2)
 		self.roundness = drawData.get("roundness", 4)
 		self.activeCorners = drawData.get("activeCorners", {})
 
@@ -1006,6 +1010,32 @@ class ScollBar(Slider):
 			pass
 
 
+# progress bar
+class ProgressBar(Box):
+	def __init__(self, rect, colors, text="", name="", surface=screen, value=0, drawData={}, textData={}, headerData={}, lists=[allProgressBars]):
+		super().__init__(rect, colors, name, surface, drawData, lists)
+
+		self.header = Label((self.rect.x, self.rect.y - headerData.get("headerHeight", 35), headerData.get("headerWidth", self.rect.w), 35), colors, text, name, surface, drawData, textData, lists=[])
+
+		self.value = value
+
+		self.bar = Box((self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.rect.w * self.value - self.borderWidth * 2, self.rect.h - self.borderWidth * 2), (colors[2], colors[2]), drawData=drawData, lists=[])
+
+		self.ChangeValue(value)
+
+	def Draw(self):
+		self.DrawBackground()
+		self.DrawBorder()
+		self.header.Draw()
+		self.bar.Draw()
+
+	def ChangeValue(self, v):
+		self.value = v
+		self.bar.rect.w = self.rect.w * self.value - self.borderWidth * 2
+		if self.roundedCorners:
+			self.bar.roundness = self.roundness + self.value
+
+
 class MessageBox(Label):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs]):
 		super().__init__(rect, colors, text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=lists)
@@ -1372,6 +1402,14 @@ def DrawAllGUIObjects():
 		for obj in allExpandableMenus:
 			obj.Draw()
 
+	if type(allProgressBars) == dict:
+		for key in allProgressBars:
+			allProgressBars[key].Draw()
+
+	elif type(allProgressBars) == list:
+		for obj in allProgressBars:
+			obj.Draw()
+
 
 def HandleGui(event):
 	if type(allTextBoxs) == dict:
@@ -1457,16 +1495,16 @@ if __name__ == "__main__":
 	def HandleEvents(event):
 		HandleGui(event)
 
-	Box((50, 50, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Label((50, 160, 100, 100), (lightBlack, white), drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
+	Box((50, 50, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Label((50, 160, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
 	Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
 	TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
 	TextInputBox((50, 500, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
-	Slider((50, 600, 300, 35), (lightBlack, darkWhite), drawData={"header": "HEADER", "borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
-	Slider((360, 400, 35, 300), (lightBlack, darkWhite), drawData={"header": "HEADER", "borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
-	Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"borderWidth": 2, "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+	Slider((50, 600, 300, 35), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
+	Slider((360, 400, 35, 300), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
+	Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
+	Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
 
 	scroll_label_1 = Label((540, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
 	scroll_label_2 = Label((700, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
@@ -1505,7 +1543,10 @@ if __name__ == "__main__":
 		], addToList=False)
 
 	ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
-	ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
+	ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
+
+	ProgressBar((900, 500, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
+	pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
 
 	while running:
 		clock.tick_busy_loop(fps)
