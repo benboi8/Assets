@@ -1,3 +1,11 @@
+# import os
+# import sys
+
+# os.chdir(sys.path[0])
+# sys.path.insert(1, "P://Python Projects/assets/")
+
+# from General import *
+
 from math import *
 from random import *
 import math
