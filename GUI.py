@@ -486,7 +486,7 @@ class Label(Box):
 				for i, char in enumerate(self.text):
 					total += 1
 					if char == " " and total * oneCharWidth > self.rect.w:
-						self.text = f"{self.text[:i]}\n{self.text[i+1:]}"
+						self.text = f"{self.text[:i]}\n{self.text[i + 1:]}"
 						total = 0
 
 		self.textObjs = []
@@ -499,7 +499,7 @@ class Label(Box):
 		rect = self.rect
 		for i, t in enumerate(text):
 			textSurface = self.font.render(str(t), True, self.fontColor)
-			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + (i * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
+			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + ((i - len(text) // 2) * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
 			self.textHeight = textSurface.get_height()
 
 		if self.name == "test":
@@ -517,7 +517,7 @@ class Label(Box):
 				self.surface.blit(obj[0], rect)
 
 	def UpdateText(self, text):
-		self.text = text
+		self.text = str(text)
 		self.CreateTextObjects()
 		self.scrollLevel = len(self.textObjs) - (self.rect.h / self.textHeight) if (self.rect.h / self.textHeight) < len(self.textObjs) else 0
 
@@ -800,17 +800,15 @@ class Button(Label):
 		self.DrawText()
 
 		if self.rect.collidepoint(pg.mouse.get_pos()):
-			if self.t < 1:
-				self.t += self.step
+			self.t += self.step
 
 			self.t = min(max(self.t, 0), 1)
 			self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
 		else:
-			if self.t > 0:
-				self.t -= self.step
+			self.t -= self.step
 
 			self.t = min(max(self.t, 0), 1)
-			self.backgroundColor = LerpColor(self.backgroundColor, self.ogBackgroundColor, self.t)
+			self.backgroundColor = LerpColor(self.ogBackgroundColor, self.backgroundColor, self.t)
 
 
 	def HandleEvent(self, event):
