@@ -317,7 +317,7 @@ class Timer:
 			for key in extraData:
 				print(f"{key}: {extraData[key]}")
 
-		return (self.startTime, self.endTime, difference)
+		return self.startTime, self.endTime, difference
 
 		self.LogResults(log, extraData)
 
