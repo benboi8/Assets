@@ -374,7 +374,7 @@ class Polygon:
 
 		ray = RayCast()
 		for p in boundingBox:
-			if not ray.Cast((self.center.x - self.center.Direction((p[0], p[1])), self.center.y - self.center.Direction((p[0], p[1]))), (p[0], p[1]), walls):
+			if not ray.Cast((self.center.x - self.center.Direction((p[0], p[1]))[0], self.center.y - self.center.Direction((p[0], p[1]))[1]), (p[0], p[1]), walls):
 				self.pixels.append(p)
 
 	def Draw(self):
@@ -422,7 +422,7 @@ class Box:
 	def __init__(self, rect, colors, name="", surface=screen, drawData={}, lists=[allBoxs]):
 		self.rect = pg.Rect(rect)
 		self.backgroundColor = colors[0]
-		self.foregroundColor = colors[1]
+		self.borderColor = colors[1]
 		self.name = name
 		self.surface = surface
 		self.drawData = drawData
@@ -448,9 +448,9 @@ class Box:
 	def DrawBorder(self):
 		if not self.roundedCorners:
 			if self.drawBorder:
-				DrawRectOutline(self.foregroundColor, self.rect, self.borderWidth, surface=self.surface)
+				DrawRectOutline(self.borderColor, self.rect, self.borderWidth, surface=self.surface)
 		else:
-			DrawRoundedRect(self.rect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface, drawBorder=self.drawBorder, drawBackground=self.drawBackground)
+			DrawRoundedRect(self.rect, (self.backgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface, drawBorder=self.drawBorder, drawBackground=self.drawBackground)
 
 
 class Label(Box):
@@ -499,7 +499,11 @@ class Label(Box):
 		rect = self.rect
 		for i, t in enumerate(text):
 			textSurface = self.font.render(str(t), True, self.fontColor)
-			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, rect.y + ((i - len(text) // 2) * textSurface.get_height()), rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
+			if "center" in self.text and "top" not in self.text:
+				y = rect.y + ((i - len(text) // 2) * textSurface.get_height())
+			else:
+				y = rect.y + (i * textSurface.get_height())
+			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, y, rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
 			self.textHeight = textSurface.get_height()
 
 		if self.name == "test":
@@ -521,6 +525,9 @@ class Label(Box):
 		self.CreateTextObjects()
 		self.scrollLevel = len(self.textObjs) - (self.rect.h / self.textHeight) if (self.rect.h / self.textHeight) < len(self.textObjs) else 0
 
+	def UpdateRect(self, rect):
+		self.rect = pg.Rect(rect)
+		self.UpdateText(self.text)
 
 class TextInputBox(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
@@ -619,20 +626,20 @@ class TextInputBox(Label):
 					self.active = not self.active
 
 					if self.active:
-						self.foregroundColor = self.activeColor
+						self.borderColor = self.activeColor
 						self.activeTime = dt.datetime.now()
 					else:
-						self.foregroundColor = self.inactiveColor
+						self.borderColor = self.inactiveColor
 				else:
 					if self.closeOnMisInput:
 						self.active = False
-						self.foregroundColor = self.inactiveColor
+						self.borderColor = self.inactiveColor
 
 		if event.type == pg.KEYDOWN:
 			if event.key == pg.K_RETURN:
 				if self.closeOnMisInput:
 					self.active = False
-					self.foregroundColor = self.inactiveColor
+					self.borderColor = self.inactiveColor
 
 			if event.key == pg.K_RIGHT:
 				self.pointer = min(len(self.text), self.pointer + 1)
@@ -750,9 +757,9 @@ class TextInputBox(Label):
 		if type(self.header) == str:
 			pg.draw.rect(self.surface, self.ogBackgroundColor, self.headerRect)
 			if not self.roundedCorners:
-				DrawRectOutline(self.foregroundColor, self.headerRect, self.borderWidth, surface=self.surface)
+				DrawRectOutline(self.borderColor, self.headerRect, self.borderWidth, surface=self.surface)
 			else:
-				DrawRoundedRect(self.headerRect, (self.ogBackgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+				DrawRoundedRect(self.headerRect, (self.ogBackgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
 
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
 
@@ -784,7 +791,7 @@ class Button(Label):
 		self.ogBackgroundColor = self.backgroundColor
 		self.inactiveColor = colors[1]
 		self.activeColor = colors[2]
-		self.foregroundColor = self.inactiveColor
+		self.borderColor = self.inactiveColor
 		self.toggle = inputData.get("toggle", False)
 
 		self.darkenPercentage = drawData.get("darkenPercentage", 80)
@@ -855,11 +862,11 @@ class Button(Label):
 			self.onClick.Start()
 
 		self.active = True
-		self.foregroundColor = self.activeColor
+		self.borderColor = self.activeColor
 
 	def Release(self):
 		self.active = False
-		self.foregroundColor = self.inactiveColor
+		self.borderColor = self.inactiveColor
 
 
 # slider - value change button rect function - test
@@ -899,7 +906,7 @@ class Slider(Label):
 		else:
 			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
 
-		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.foregroundColor), self.buttonData.get("activeColor", InvertColor(self.foregroundColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.borderColor), self.buttonData.get("activeColor", InvertColor(self.borderColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
 
 	def GetMousePos(self):
 		self.startMousePos = pg.mouse.get_pos()
@@ -914,9 +921,9 @@ class Slider(Label):
 		if type(self.header) == str:
 			if not self.roundedCorners:
 				pg.draw.rect(self.surface, self.backgroundColor, self.headerRect)
-				DrawRectOutline(self.foregroundColor, self.headerRect, self.borderWidth, surface=self.surface)
+				DrawRectOutline(self.borderColor, self.headerRect, self.borderWidth, surface=self.surface)
 			else:
-				DrawRoundedRect(self.headerRect, (self.backgroundColor, self.foregroundColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+				DrawRoundedRect(self.headerRect, (self.backgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
 
 			self.surface.blit(self.headerTextSurface, self.headerTextRect)
 
@@ -1041,16 +1048,19 @@ class MessageBox(Label):
 		confirmButtonRect = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		confirmButtonColors = confirmButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		confirmButtonTextData = confirmButtonData.get("textData", {})
-		self.confirmButton = Button((self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]), confirmButtonColors, onClick = confirmButtonData.get("onClick", print), onClickArgs = confirmButtonData.get("onclickArgs", ["confirm"]), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
+		confirmButtonRect = confirmButtonData.get("rect", (self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]))
+		self.confirmButton = Button(confirmButtonRect, confirmButtonColors, onClick = confirmButtonData.get("onClick", print), onClickArgs = confirmButtonData.get("onclickArgs", ["confirm"] if confirmButtonData.get("onClick", print) == print else []), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
 
 		cancelButtonRect = cancelButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		cancelButtonColors = cancelButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		cancelButtonTextData = cancelButtonData.get("textData", {})
-		self.cancelButton = Button((self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]), cancelButtonColors, onClick = cancelButtonData.get("onClick", print), onClickArgs = cancelButtonData.get("onclickArgs", ["cancel"]), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
+		cancelButtonRect = cancelButtonData.get("rect", (self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]))
+		self.cancelButton = Button(cancelButtonRect, cancelButtonColors, onClick = cancelButtonData.get("onClick", print), onClickArgs = cancelButtonData.get("onclickArgs", ["cancel"] if cancelButtonData.get("onClick", print) == print else []), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
 
 		messageBoxButtonColors = messageBoxData.get("colors", (colors[0], colors[1]))
 		messageBoxButtonTextData = messageBoxData.get("textData", {})
-		self.messageBox = Label((self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonRect[1]), messageBoxButtonColors, text = messageBoxData.get("text", "Message box"), name=messageBoxData.get("name", f"{self.name}-messageBox"), surface=self.surface, drawData=drawData, textData=messageBoxButtonTextData, lists=[])
+		messageBoxButtonRect = messageBoxData.get("rect", pg.Rect(self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonRect[1]))
+		self.messageBox = Label(messageBoxButtonRect, messageBoxButtonColors, text = messageBoxData.get("text", "Message box"), name=messageBoxData.get("name", f"{self.name}-messageBox"), surface=self.surface, drawData=drawData, textData=messageBoxButtonTextData, lists=[])
 
 	def Draw(self):
 		self.DrawBackground()
@@ -1082,14 +1092,14 @@ class Switch(Box):
 		self.lastChoiceColor = colors[3]
 
 		if text != "":
-			self.header = Label((self.rect.x, self.rect.y - drawData.get("headerYoffSet", 50), self.rect.w, drawData.get("headerYoffSet", 50)), (self.backgroundColor, self.foregroundColor), text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=[])
+			self.header = Label((self.rect.x, self.rect.y - drawData.get("headerYoffSet", 50), self.rect.w, drawData.get("headerYoffSet", 50)), (self.backgroundColor, self.borderColor), text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=[])
 		else:
 			self.header = None
 
 		TD = textData
 		TD["alignText"] = inputData.get("optionAlignText", "center-top")
-		self.firstChoice = Button((self.rect.x, self.rect.y, self.rect.w // 2, self.rect.h), (self.backgroundColor, self.foregroundColor, self.firstChoiceColor), text=inputData.get("firstChoiceText", ""), name=f"{self.name}_firstChoice", surface=self.surface, drawData=drawData, textData=TD, lists=[])
-		self.lastChoice = Button((self.rect.x + self.rect.w // 2, self.rect.y, self.rect.w // 2, self.rect.h), (self.backgroundColor, self.foregroundColor, self.lastChoiceColor), text=inputData.get("lastChoiceText", ""), name=f"{self.name}_lastChoice", surface=self.surface, drawData=drawData, textData=TD, lists=[])
+		self.firstChoice = Button((self.rect.x, self.rect.y, self.rect.w // 2, self.rect.h), (self.backgroundColor, self.borderColor, self.firstChoiceColor), text=inputData.get("firstChoiceText", ""), name=f"{self.name}_firstChoice", surface=self.surface, drawData=drawData, textData=TD, lists=[])
+		self.lastChoice = Button((self.rect.x + self.rect.w // 2, self.rect.y, self.rect.w // 2, self.rect.h), (self.backgroundColor, self.borderColor, self.lastChoiceColor), text=inputData.get("lastChoiceText", ""), name=f"{self.name}_lastChoice", surface=self.surface, drawData=drawData, textData=TD, lists=[])
 
 		self.activeChoice = self.firstChoice
 
@@ -1177,7 +1187,7 @@ class MultiselectButton(Label):
 		self.DrawText()
 
 		if self.activeSelection != None:
-			self.activeSelection.foregroundColor = self.activeSelection.activeColor
+			self.activeSelection.borderColor = self.activeSelection.activeColor
 
 		for option in self.options:
 			option.Draw()
