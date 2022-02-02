@@ -196,7 +196,7 @@ class Vec2:
 		# return atan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
 		# return tan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
 		# return (self.x / abs(self.x), self.y / abs(self.y))
-		return ((pointOfDirection[0] - self.x) / abs(pointOfDirection[0]), (pointOfDirection[1] - self.y) / abs(pointOfDirection[1]))
+		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
 
 	def Dot(self, vec):
 		return self.x * vec.x + self.y * vec.y
@@ -303,25 +303,30 @@ class Vec3(Vec2):
 # used to time how long a function takes to run
 class Timer:
 	def __init__(self):
-		self.startTime = dt.datetime.now()
+		self.Start()
 
 	def Start(self):
 		self.startTime = dt.datetime.now()
 
+	def GetDiff(self):
+		return dt.datetime.now() - self.startTime
+
 	def Stop(self, log=None, extraData={}, printResult=True):
 		self.endTime = dt.datetime.now()
-		difference = self.endTime - self.startTime
+		difference = self.GetDiff()
 
 		if printResult:
 			print(f"Start time: {self.startTime}, end time: {self.endTime}, difference: {difference}")
 			for key in extraData:
 				print(f"{key}: {extraData[key]}")
 
+		self.LogResults(log, extraData)
+		
 		return self.startTime, self.endTime, difference
 
-		self.LogResults(log, extraData)
 
 	def LogResults(self, log=None, extraData={}):
+		difference = self.GetDiff()
 		if log != None:
 			try:
 				with open(log, "x") as file:
@@ -454,6 +459,14 @@ def AddToListOrDict(lists, obj, key=None):
 # return the current time with a default format
 def NowFormatted(timeFormat="%d/%m/%y %H:%M:%S"):
 	return dt.datetime.now().strftime(timeFormat)
+
+# return angle between 3 points - takes Vec2 as inputs
+def GetAngle(p1, p2, p3):
+	mult = 1
+	if p3.y > p2.y:
+		mult = -1
+	return (acos((p1.GetEuclideanDistance((p2.x, p2.y)) ** 2 + p1.GetEuclideanDistance((p3.x, p3.y)) ** 2 - p2.GetEuclideanDistance((p3.x, p3.y)) ** 2) / (2 * p1.GetEuclideanDistance((p2.x, p2.y)) * p1.GetEuclideanDistance((p3.x, p3.y))))) * mult
+
 
 
 if __name__ == "__main__":

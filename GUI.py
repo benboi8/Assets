@@ -22,7 +22,6 @@ running = True
 
 fps = 60
 
-
 points = {}
 lines = {}
 polygons = {}
@@ -275,28 +274,36 @@ class Point(Vec2):
 
 		AddToListOrDict(lists, self)
 
-
 	def Draw(self):
 		pg.draw.circle(self.surface, self.color, (self.x, self.y), self.radius)
 
 
 class Line:
-	def __init__(self, startPos, endPos, color, startPointRadius=3, endPointRadius=3, name="", surface=screen, lists=[lines]):
+	def __init__(self, startPos, endPos, color, startPointRadius=3, endPointRadius=3, aa=False, name="", surface=screen, lists=[lines]):
 		self.start = Point(startPos[0], startPos[1], color, startPointRadius, surface, lists=[])
 		self.end = Point(endPos[0], endPos[1], color, endPointRadius, surface, lists=[])
 		self.name = name
 
 		self.surface = surface
-		self.startPos = startPos
-		self.endPos = endPos
+		self.startPos = (self.start.x, self.start.y)
+		self.endPos = (self.end.x, self.end.y)
+
 		self.color = color
+
+		self.aa = aa
 
 		AddToListOrDict(lists, self)
 
 	def Draw(self):
+		self.startPos = (self.start.x, self.start.y)
+		self.endPos = (self.end.x, self.end.y)
+
 		self.start.Draw()
 		self.end.Draw()
-		pg.draw.line(self.surface, self.color, self.startPos, self.endPos)
+		if not self.aa:
+			pg.draw.line(self.surface, self.color, self.startPos, self.endPos)
+		else:
+			pg.draw.aaline(self.surface, self.color, self.startPos, self.endPos)
 
 
 class Polygon:
@@ -427,6 +434,8 @@ class Box:
 		self.surface = surface
 		self.drawData = drawData
 
+		self.disabled = drawData.get("disabled", False)
+
 		self.drawBorder = drawData.get("drawBorder", True)
 		self.drawBackground = drawData.get("drawBackground", True)
 		self.roundedCorners = drawData.get("roundedCorners", False)
@@ -437,8 +446,9 @@ class Box:
 		AddToListOrDict(lists, self)
 
 	def Draw(self):
-		self.DrawBackground()
-		self.DrawBorder()
+		if not self.disabled:
+			self.DrawBackground()
+			self.DrawBorder()
 
 	def DrawBackground(self):
 		if self.drawBackground:
@@ -510,9 +520,10 @@ class Label(Box):
 			print(len(self.textObjs))
 
 	def Draw(self):
-		self.DrawBackground()
-		self.DrawBorder()
-		self.DrawText()
+		if not self.disabled:
+			self.DrawBackground()
+			self.DrawBorder()
+			self.DrawText()
 
 	def DrawText(self):
 		for obj in self.textObjs:
@@ -528,6 +539,7 @@ class Label(Box):
 	def UpdateRect(self, rect):
 		self.rect = pg.Rect(rect)
 		self.UpdateText(self.text)
+
 
 class TextInputBox(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
@@ -607,50 +619,51 @@ class TextInputBox(Label):
 				file.close()
 
 	def HandleEvent(self, event):
-		if event.type == pg.MOUSEBUTTONDOWN:
-			if event.button == 1:
-				if self.rect.collidepoint(pg.mouse.get_pos()):
-					if type(allTextBoxs) == dict:
-						for key in allTextBoxs:
-							if allTextBoxs[key] != self:
-								if allTextBoxs[key].active:
-									return
+		if not self.disabled:
+			if event.type == pg.MOUSEBUTTONDOWN:
+				if event.button == 1:
+					if self.rect.collidepoint(pg.mouse.get_pos()):
+						if type(allTextBoxs) == dict:
+							for key in allTextBoxs:
+								if allTextBoxs[key] != self:
+									if allTextBoxs[key].active:
+										return
 
-					elif type(allTextBoxs) == list:
-						for obj in allTextBoxs:
-							if obj != self:
-								if obj.active:
-									return
+						elif type(allTextBoxs) == list:
+							for obj in allTextBoxs:
+								if obj != self:
+									if obj.active:
+										return
 
-					self.pointer = len(self.text)
-					self.active = not self.active
+						self.pointer = len(self.text)
+						self.active = not self.active
 
-					if self.active:
-						self.borderColor = self.activeColor
-						self.activeTime = dt.datetime.now()
+						if self.active:
+							self.borderColor = self.activeColor
+							self.activeTime = dt.datetime.now()
+						else:
+							self.borderColor = self.inactiveColor
 					else:
-						self.borderColor = self.inactiveColor
-				else:
+						if self.closeOnMisInput:
+							self.active = False
+							self.borderColor = self.inactiveColor
+
+			if event.type == pg.KEYDOWN:
+				if event.key == pg.K_RETURN:
 					if self.closeOnMisInput:
 						self.active = False
 						self.borderColor = self.inactiveColor
 
-		if event.type == pg.KEYDOWN:
-			if event.key == pg.K_RETURN:
-				if self.closeOnMisInput:
-					self.active = False
-					self.borderColor = self.inactiveColor
+				if event.key == pg.K_RIGHT:
+					self.pointer = min(len(self.text), self.pointer + 1)
+				if event.key == pg.K_LEFT:
+					if not self.replaceSplashText:
+						self.pointer = max(len(self.splashText), self.pointer - 1)
+					else:
+						self.pointer = max(0, self.pointer - 1)
 
-			if event.key == pg.K_RIGHT:
-				self.pointer = min(len(self.text), self.pointer + 1)
-			if event.key == pg.K_LEFT:
-				if not self.replaceSplashText:
-					self.pointer = max(len(self.splashText), self.pointer - 1)
-				else:
-					self.pointer = max(0, self.pointer - 1)
-
-		if self.active:
-			self.HandleKeyboard(event)
+			if self.active:
+				self.HandleKeyboard(event)
 
 	def HandleKeyboard(self, event):
 		if self.active:
@@ -737,35 +750,36 @@ class TextInputBox(Label):
 		self.UpdateText(self.text)
 
 	def Draw(self):
-		self.DrawBackground()
-		self.DrawBorder()
-		self.DrawText()
+		if not self.disabled:
+			self.DrawBackground()
+			self.DrawBorder()
+			self.DrawText()
 
-		if self.rect.collidepoint(pg.mouse.get_pos()):
-			if self.t < 1:
-				self.t += self.step
+			if self.rect.collidepoint(pg.mouse.get_pos()):
+				if self.t < 1:
+					self.t += self.step
 
-			self.t = min(max(self.t, 0), 1)
-			self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
-		else:
-			if self.t > 0:
-				self.t -= self.step
-
-			self.t = min(max(self.t, 0), 1)
-			self.backgroundColor = LerpColor(self.backgroundColor, self.ogBackgroundColor, self.t)
-
-		if type(self.header) == str:
-			pg.draw.rect(self.surface, self.ogBackgroundColor, self.headerRect)
-			if not self.roundedCorners:
-				DrawRectOutline(self.borderColor, self.headerRect, self.borderWidth, surface=self.surface)
+				self.t = min(max(self.t, 0), 1)
+				self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
 			else:
-				DrawRoundedRect(self.headerRect, (self.ogBackgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+				if self.t > 0:
+					self.t -= self.step
 
-			self.surface.blit(self.headerTextSurface, self.headerTextRect)
+				self.t = min(max(self.t, 0), 1)
+				self.backgroundColor = LerpColor(self.backgroundColor, self.ogBackgroundColor, self.t)
 
-		if self.active:
-			if self.CursorTime():
-				pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
+			if type(self.header) == str:
+				pg.draw.rect(self.surface, self.ogBackgroundColor, self.headerRect)
+				if not self.roundedCorners:
+					DrawRectOutline(self.borderColor, self.headerRect, self.borderWidth, surface=self.surface)
+				else:
+					DrawRoundedRect(self.headerRect, (self.ogBackgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+
+				self.surface.blit(self.headerTextSurface, self.headerTextRect)
+
+			if self.active:
+				if self.CursorTime():
+					pg.draw.rect(self.surface, self.fontColor, (self.textRect.x + (self.textSurface.get_width() / max(1, len(self.text)) * self.pointer), self.textRect.y + 3, 2, self.textSurface.get_height() - 6))
 
 	def DefaultCursorTime(self):
 		return dt.datetime.now().microsecond % 1000000 > 500000 or (dt.datetime.now() - self.activeTime).seconds <= 2
@@ -802,54 +816,55 @@ class Button(Label):
 		self.step = 0.05
 
 	def Draw(self):
-		self.DrawBackground()
-		self.DrawBorder()
-		self.DrawText()
+		if not self.disabled:
+			self.DrawBackground()
+			self.DrawBorder()
+			self.DrawText()
 
-		if self.rect.collidepoint(pg.mouse.get_pos()):
-			self.t += self.step
+			if self.rect.collidepoint(pg.mouse.get_pos()):
+				self.t += self.step
 
-			self.t = min(max(self.t, 0), 1)
-			self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
-		else:
-			self.t -= self.step
+				self.t = min(max(self.t, 0), 1)
+				self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
+			else:
+				self.t -= self.step
 
-			self.t = min(max(self.t, 0), 1)
-			self.backgroundColor = LerpColor(self.ogBackgroundColor, self.backgroundColor, self.t)
-
+				self.t = min(max(self.t, 0), 1)
+				self.backgroundColor = LerpColor(self.ogBackgroundColor, self.backgroundColor, self.t)
 
 	def HandleEvent(self, event):
-		if self.rect.collidepoint(pg.mouse.get_pos()):
-			if event.type == self.keyBinds["activeType"]:
-				if self.keyBinds["nameType"] == "mouse":
-					if event.button == self.keyBinds["active"]:
-						if not self.toggle:
-							self.Click()
-						else:
-							if self.active:
-								self.Release()
-							else:
+		if not self.disabled:
+			if self.rect.collidepoint(pg.mouse.get_pos()):
+				if event.type == self.keyBinds["activeType"]:
+					if self.keyBinds["nameType"] == "mouse":
+						if event.button == self.keyBinds["active"]:
+							if not self.toggle:
 								self.Click()
-
-				elif self.keyBinds["nameType"] == "key":
-					if event.key == self.keyBinds["active"]:
-						if not self.toggle:
-							self.Click()
-						else:
-							if self.active:
-								self.Release()
 							else:
+								if self.active:
+									self.Release()
+								else:
+									self.Click()
+
+					elif self.keyBinds["nameType"] == "key":
+						if event.key == self.keyBinds["active"]:
+							if not self.toggle:
 								self.Click()
+							else:
+								if self.active:
+									self.Release()
+								else:
+									self.Click()
 
-		if not self.toggle:
-			if event.type == self.keyBinds["releaseType"]:
-				if self.keyBinds["nameType"] == "mouse":
-					if event.button == self.keyBinds["active"]:
-						self.Release()
+			if not self.toggle:
+				if event.type == self.keyBinds["releaseType"]:
+					if self.keyBinds["nameType"] == "mouse":
+						if event.button == self.keyBinds["active"]:
+							self.Release()
 
-				elif self.keyBinds["nameType"] == "key":
-					if event.key == self.keyBinds["active"]:
-						self.Release()
+					elif self.keyBinds["nameType"] == "key":
+						if event.key == self.keyBinds["active"]:
+							self.Release()
 
 	def Click(self):
 		if self.disabled:
@@ -868,6 +883,8 @@ class Button(Label):
 		self.active = False
 		self.borderColor = self.inactiveColor
 
+
+# add disabled var to all below
 
 # slider - value change button rect function - test
 class Slider(Label):
@@ -1015,7 +1032,6 @@ class ScollBar(Slider):
 			pass
 
 
-# progress bar
 class ProgressBar(Box):
 	def __init__(self, rect, colors, text="", name="", surface=screen, value=0, drawData={}, textData={}, headerData={}, lists=[allProgressBars]):
 		super().__init__(rect, colors, name, surface, drawData, lists)
@@ -1045,21 +1061,21 @@ class MessageBox(Label):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs]):
 		super().__init__(rect, colors, text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=lists)
 
-		confirmButtonRect = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
+		confirmButtonSize = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		confirmButtonColors = confirmButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		confirmButtonTextData = confirmButtonData.get("textData", {})
-		confirmButtonRect = confirmButtonData.get("rect", (self.rect.x + self.rect.w - confirmButtonRect[0] - 10, self.rect.y + self.rect.h - confirmButtonRect[1] - 10, confirmButtonRect[0], confirmButtonRect[1]))
+		confirmButtonRect = confirmButtonData.get("rect", (self.rect.x + self.rect.w - confirmButtonSize[0] - 10, self.rect.y + self.rect.h - confirmButtonSize[1] - 10, confirmButtonSize[0], confirmButtonSize[1]))
 		self.confirmButton = Button(confirmButtonRect, confirmButtonColors, onClick = confirmButtonData.get("onClick", print), onClickArgs = confirmButtonData.get("onclickArgs", ["confirm"] if confirmButtonData.get("onClick", print) == print else []), text = confirmButtonData.get("text", "Confirm"), name=confirmButtonData.get("name", f"{self.name}-confirmButton"), surface=self.surface, drawData=drawData, textData=confirmButtonTextData, inputData=confirmButtonData.get("inputData", {}), lists=[])
 
-		cancelButtonRect = cancelButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
+		cancelButtonSize = cancelButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
 		cancelButtonColors = cancelButtonData.get("colors", (colors[0], colors[1], InvertColor(colors[1])))
 		cancelButtonTextData = cancelButtonData.get("textData", {})
-		cancelButtonRect = cancelButtonData.get("rect", (self.rect.x + self.rect.w - cancelButtonRect[0] - 20 - confirmButtonRect[0], self.rect.y + self.rect.h - cancelButtonRect[1] - 10, cancelButtonRect[0], cancelButtonRect[1]))
+		cancelButtonRect = cancelButtonData.get("rect", (self.rect.x + self.rect.w - cancelButtonSize[0] - 20 - confirmButtonSize[0], self.rect.y + self.rect.h - cancelButtonSize[1] - 10, cancelButtonSize[0], cancelButtonSize[1]))
 		self.cancelButton = Button(cancelButtonRect, cancelButtonColors, onClick = cancelButtonData.get("onClick", print), onClickArgs = cancelButtonData.get("onclickArgs", ["cancel"] if cancelButtonData.get("onClick", print) == print else []), text = cancelButtonData.get("text", "Cancel"), name=cancelButtonData.get("name", f"{self.name}-cancelButton"), surface=self.surface, drawData=drawData, textData=cancelButtonTextData, inputData=cancelButtonData.get("inputData", {}), lists=[])
 
 		messageBoxButtonColors = messageBoxData.get("colors", (colors[0], colors[1]))
 		messageBoxButtonTextData = messageBoxData.get("textData", {})
-		messageBoxButtonRect = messageBoxData.get("rect", pg.Rect(self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonRect[1]))
+		messageBoxButtonRect = messageBoxData.get("rect", (self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonSize[1]))
 		self.messageBox = Label(messageBoxButtonRect, messageBoxButtonColors, text = messageBoxData.get("text", "Message box"), name=messageBoxData.get("name", f"{self.name}-messageBox"), surface=self.surface, drawData=drawData, textData=messageBoxButtonTextData, lists=[])
 
 	def Draw(self):
@@ -1323,12 +1339,10 @@ def DrawAllGUIObjects():
 	if type(allLabels) == dict:
 		for key in allLabels:
 			allLabels[key].Draw()
-			allLabels[key].DrawText()
 
 	elif type(allLabels) == list:
 		for obj in allLabels:
 			obj.Draw()
-			obj.DrawText()
 
 	if type(allTextBoxs) == dict:
 		for key in allTextBoxs:
