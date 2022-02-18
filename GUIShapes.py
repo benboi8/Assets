@@ -16,10 +16,10 @@ class Shape:
 
 
 class Triangle(Shape):
-	def __init__(self, center, sideLength, color, rotAngle=0, sidePoints=[], name="", lists=[triangles]):
+	def __init__(self, center, sideLength, color, rotAngle=0, sidePoints=[], pointRadius=2, name="", lists=[triangles]):
 		super().__init__(center, sideLength, color, rotAngle, sidePoints, name, lists)
 
-		self.body = Polygon(self.center, 3, self.color, self.sideLength, self.rotAngle, sidePoints=sidePoints, lists=[])
+		self.body = Polygon(self.center, 3, self.color, self.sideLength, self.rotAngle, sidePoints=sidePoints, pointRadius=pointRadius, lists=[])
 
 	def Draw(self):
 		self.body.Draw()

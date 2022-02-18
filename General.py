@@ -152,7 +152,6 @@ class Vec2:
 		self.x = x
 		self.y = y
 		self.origin = x, y
-
 		AddToListOrDict(lists, self)
 
 	def ToString(self):
@@ -172,18 +171,28 @@ class Vec2:
 		return Vec2(self.x, self.y)
 
 	def Add(self, vec):
+		if type(vec) == Vec2:
+			return Vec2(self.x + vec.x, self.y + vec.y)
 		return Vec2(self.x + vec[0], self.y + vec[1])
 
 	def Sub(self, vec):
+		if type(vec) == Vec2:
+			return Vec2(self.x - vec.x, self.y - vec.y)
 		return Vec2(self.x - vec[0], self.y - vec[1])
 
 	def Multiply(self, vec):
+		if type(vec) == Vec2:
+			return Vec2(self.x * vec.x, self.y * vec.y)
 		return Vec2(self.x * vec[0], self.y * vec[1])
 
 	def Divide(self, vec):
+		if type(vec) == Vec2:
+			return Vec2(self.x / vec.x, self.y / vec.y)
 		return Vec2(self.x / vec[0], self.y / vec[1])
 
 	def IntDivide(self, vec):
+		if type(vec) == Vec2:
+			return Vec2(self.x // vec.x, self.y // vec.y)
 		return Vec2(self.x // vec[0], self.y // vec[1])
 
 	def Magnitude(self):
@@ -192,10 +201,13 @@ class Vec2:
 	def MagnitudeSquared(self):
 		return (self.x ** 2) + (self.y ** 2)
 
+	def Limit(self, maxValue):
+		magSq = self.MagnitudeSquared()
+		if magSq > maxValue ** 2:
+			return self.Divide((sqrt(magSq), sqrt(magSq))).Multiply((maxValue, maxValue))
+		return self
+
 	def Direction(self, pointOfDirection):
-		# return atan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
-		# return tan(pointOfDirection[1] - self.y / pointOfDirection[0] - self.x)
-		# return (self.x / abs(self.x), self.y / abs(self.y))
 		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
 
 	def Dot(self, vec):
@@ -205,22 +217,26 @@ class Vec2:
 		return Vec2(self.x * vec.x - self.y * vec.y)
 
 	def GetEuclideanDistance(self, pos):
+		if type(pos) == Vec2:
+			return sqrt((self.x - pos.x) ** 2 + (self.y - pos.y) ** 2)
 		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
 
 	def GetTaxicabDistance(self, pos):
+		if type(pos) == Vec2:
+			return abs(self.x - pos.x) + abs(self.y - pos.y)
 		return abs(self.x - pos[0]) + abs(self.y - pos[1])
 
 	def Normalize(self):
 		return self.Multiply(Vec2(1 / self.Magnitude(), 1 / self.Magnitude()))
 
-	def RotateRadians(self, angle, distanceToRotPoint, pointOfRot=None):
+	def RotateRadians(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
 			pointOfRot = self.origin
 		angle += (225 * (pi / 180))
 		angle *= -1
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
-	def RotateDegrees(self, angle, distanceToRotPoint, pointOfRot=None):
+	def RotateDegrees(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
 			pointOfRot = self.origin
 		angle = radians(angle)

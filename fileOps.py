@@ -260,5 +260,9 @@ def ConvertStringToType(txt):
 	return txt
 
 
+def RemoveFile(filePath):
+	os.remove(filePath)
+
+
 if __name__ == "__main__":
 	pass

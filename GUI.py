@@ -37,6 +37,7 @@ allHyperLinks = {}
 allSwitches = {}
 allMultiselectButtons = {}
 allProgressBars = {}
+allRadioButtons = {}
 
 allCollections = {}
 allExpandableMenus = {}
@@ -462,6 +463,9 @@ class Box:
 		else:
 			DrawRoundedRect(self.rect, (self.backgroundColor, self.borderColor), self.roundness, self.borderWidth, self.activeCorners, self.surface, drawBorder=self.drawBorder, drawBackground=self.drawBackground)
 
+	def UpdateRect(self, rect):
+		self.rect = pg.Rect(rect)
+
 
 class Label(Box):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, lists=[allLabels]):
@@ -472,12 +476,19 @@ class Label(Box):
 		self.fontName = textData.get("fontName", fontName)
 		self.fontColor = textData.get("fontColor", white)
 		self.alignText = textData.get("alignText", "center")
+		self.fitRectToText = textData.get("fitRectToText", False)
 
 		self.scrollLevel = 0
+		self.minWidth, self.minHeight = self.rect.w, self.rect.h
 
 		self.CreateTextObjects()
 
-	def CreateTextObjects(self):
+	def CreateTextObjects(self, recursive=False, minWidth=None, minHeight=None):
+		if minWidth == None:
+			self.minWidth = self.rect.w
+		if minHeight == None:
+			self.minHeight = self.rect.h
+
 		try:
 			self.font = pg.font.Font(self.fontName, self.fontSize)
 		except FileNotFoundError:
@@ -506,18 +517,28 @@ class Label(Box):
 		else:
 			text = self.text.split("\n")
 
-		rect = self.rect
+		rect = pg.Rect(self.rect.x, self.rect.y, self.minWidth, self.minHeight)
 		for i, t in enumerate(text):
 			textSurface = self.font.render(str(t), True, self.fontColor)
 			if "center" in self.text and "top" not in self.text:
 				y = rect.y + ((i - len(text) // 2) * textSurface.get_height())
 			else:
 				y = rect.y + (i * textSurface.get_height())
+			
 			self.textObjs.append((textSurface, AlignText(pg.Rect(rect.x, y, rect.w, rect.h), textSurface, self.alignText, self.borderWidth)))
 			self.textHeight = textSurface.get_height()
+		
+			self.minWidth, self.minHeight = min(self.minWidth, textSurface.get_width() + self.borderWidth + 10), min(self.minHeight, textSurface.get_height() + self.borderWidth + 5)
+			
 
 		if self.name == "test":
 			print(len(self.textObjs))
+
+		if self.fitRectToText:
+			self.rect.w = self.minWidth + 200
+			self.rect.h = (self.minHeight * len(self.textObjs)) + (self.borderWidth + 20)
+			if not recursive:
+				self.CreateTextObjects(True, self.minWidth, self.minHeight)
 
 	def Draw(self):
 		if not self.disabled:
@@ -797,8 +818,10 @@ class Button(Label):
 
 		self.onClick = onClick
 		self.onClickArgs = onClickArgs
+		# add on release 
+		
 		self.disabled = False
-		self.active = False
+		self.active = inputData.get("active", False)
 		self.result = None
 
 		self.backgroundColor = colors[0]
@@ -1222,8 +1245,41 @@ class MultiselectButton(Label):
 			self.activeSelection = self.options[index]
 
 
+# add custom button
+# add better way to add buttons
+class RadioButton(Label):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, buttons=[], lists=[allRadioButtons]):
+		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
 
-# radio button
+		self.buttons = buttons
+
+	def AddButton(self, button: Button | dict):
+		if type(button) == Button:
+			self.buttons.append(button)
+		elif type(button) == dict:
+			rect = button.get("rect")
+			colors = button.get("colors")
+			onClick = button.get("onClick", None)
+			onClickArgs = button.get("onClickArgs", [])
+			text = button.get("text", "")
+			name = button.get("name", "")
+			drawData = button.get("drawData", {})
+			textData = button.get("textData", {})
+			inputData = button.get("inputData", {})
+
+			self.buttons.append(Button(rect, colors, onClick, onClickArgs, text, name, drawData, textData, inputData))			
+
+	def Draw(self):
+		self.DrawBackground()
+		self.DrawBorder()
+		self.DrawText()
+
+		for button in self.buttons:
+			button.Draw()
+
+	def HandleEvent(self, event):
+		for button in self.buttons:
+			button.HandleEvent(event)
 
 
 # dropdown menu
@@ -1408,6 +1464,22 @@ def DrawAllGUIObjects():
 		for obj in allMultiselectButtons:
 			obj.Draw()
 
+	if type(allProgressBars) == dict:
+		for key in allProgressBars:
+			allProgressBars[key].Draw()
+
+	elif type(allProgressBars) == list:
+		for obj in allProgressBars:
+			obj.Draw()
+
+	if type(allRadioButtons) == dict:
+		for key in allRadioButtons:
+			allRadioButtons[key].Draw()
+
+	elif type(allRadioButtons) == list:
+		for obj in allRadioButtons:
+			obj.Draw()
+
 	if type(allCollections) == dict:
 		for key in allCollections:
 			allCollections[key].Draw()
@@ -1422,14 +1494,6 @@ def DrawAllGUIObjects():
 
 	elif type(allExpandableMenus) == list:
 		for obj in allExpandableMenus:
-			obj.Draw()
-
-	if type(allProgressBars) == dict:
-		for key in allProgressBars:
-			allProgressBars[key].Draw()
-
-	elif type(allProgressBars) == list:
-		for obj in allProgressBars:
 			obj.Draw()
 
 
@@ -1489,6 +1553,14 @@ def HandleGui(event):
 	else:
 		for obj in allMultiselectButtons:
 			obj.HandleEvent(event)
+
+	if type(allRadioButtons) == dict:
+		for key in allRadioButtons:
+			allRadioButtons[key].Draw()
+
+	elif type(allRadioButtons) == list:
+		for obj in allRadioButtons:
+			obj.Draw()
 
 	if type(allCollections) == dict:
 		for key in allCollections:
@@ -1567,8 +1639,10 @@ if __name__ == "__main__":
 	ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
 	ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
 
-	ProgressBar((900, 500, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
+	ProgressBar((900, 520, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
 	pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
+
+	# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
 
 	while running:
 		clock.tick_busy_loop(fps)
