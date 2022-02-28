@@ -171,27 +171,27 @@ class Vec2:
 		return Vec2(self.x, self.y)
 
 	def Add(self, vec):
-		if type(vec) == Vec2:
+		if isinstance(vec, Vec2):
 			return Vec2(self.x + vec.x, self.y + vec.y)
 		return Vec2(self.x + vec[0], self.y + vec[1])
 
 	def Sub(self, vec):
-		if type(vec) == Vec2:
+		if isinstance(vec, Vec2):
 			return Vec2(self.x - vec.x, self.y - vec.y)
 		return Vec2(self.x - vec[0], self.y - vec[1])
 
 	def Multiply(self, vec):
-		if type(vec) == Vec2:
+		if isinstance(vec, Vec2):
 			return Vec2(self.x * vec.x, self.y * vec.y)
 		return Vec2(self.x * vec[0], self.y * vec[1])
 
 	def Divide(self, vec):
-		if type(vec) == Vec2:
+		if isinstance(vec, Vec2):
 			return Vec2(self.x / vec.x, self.y / vec.y)
 		return Vec2(self.x / vec[0], self.y / vec[1])
 
 	def IntDivide(self, vec):
-		if type(vec) == Vec2:
+		if isinstance(vec, Vec2):
 			return Vec2(self.x // vec.x, self.y // vec.y)
 		return Vec2(self.x // vec[0], self.y // vec[1])
 
@@ -217,12 +217,12 @@ class Vec2:
 		return Vec2(self.x * vec.x - self.y * vec.y)
 
 	def GetEuclideanDistance(self, pos):
-		if type(pos) == Vec2:
+		if isinstance(pos, Vec2):
 			return sqrt((self.x - pos.x) ** 2 + (self.y - pos.y) ** 2)
 		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
 
 	def GetTaxicabDistance(self, pos):
-		if type(pos) == Vec2:
+		if isinstance(pos, Vec2):
 			return abs(self.x - pos.x) + abs(self.y - pos.y)
 		return abs(self.x - pos[0]) + abs(self.y - pos[1])
 
@@ -476,8 +476,23 @@ def AddToListOrDict(lists, obj, key=None):
 def NowFormatted(timeFormat="%d/%m/%y %H:%M:%S"):
 	return dt.datetime.now().strftime(timeFormat)
 
-# return angle between 3 points - takes Vec2 as inputs
+# return angle between 3 points
 def GetAngle(p1, p2, p3):
+	if isinstance(p1, (tuple, list)):
+		p1 = Vec2(p1[0], p1[1])
+	if isinstance(p1, dict):
+		p1 = Vec2(p1["x"], p1["y"])
+	
+	if isinstance(p2, (tuple, list)):
+		p2 = Vec2(p2[0], p2[1])
+	if isinstance(p2, dict):
+		p2 = Vec2(p2["x"], p2["y"])
+	
+	if isinstance(p3, (tuple, list)):
+		p3 = Vec2(p3[0], p3[1])
+	if isinstance(p3, dict):
+		p3 = Vec2(p3["x"], p3["y"])
+
 	mult = 1
 	if p3.y > p2.y:
 		mult = -1

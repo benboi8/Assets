@@ -562,6 +562,45 @@ class Label(Box):
 		self.UpdateText(self.text)
 
 
+class Hint(Label):
+	def __init__(self, rect, colors, parent, text="", delay=None, name="", surface=screen, drawData={}, textData={}):
+		"""Delay: In microseconds, max of 1 minute"""
+
+		super().__init__(rect, colors, text, name, surface, drawData, textData, [])
+
+		self.parent = parent
+		self.delay = abs(min(delay, 60000000))
+		self.startTime = dt.datetime.now()
+		self.hasStartTimeUpdated = False
+		self.showHint = False
+
+	def Draw(self):
+		if not self.disabled:
+			if self.delay != None:
+				if self.parent.rect.collidepoint(pg.mouse.get_pos()):
+					if not self.hasStartTimeUpdated:
+						self.startTime = dt.datetime.now()
+						self.hasStartTimeUpdated = True
+					else:
+						diff = (dt.datetime.now() - self.startTime)
+						if self.delay <= 1000000: # number of microseconds in a second
+							if diff.microseconds >= self.delay:
+								self.showHint = True
+
+						else:
+							if self.delay <= 60000000: # number of microseconds in a minute
+								if diff.seconds >= self.delay / 1000000 and diff.microseconds >= self.delay % 1000000:
+									self.showHint = False
+				else:
+					self.showHint = False
+					self.hasStartTimeUpdated = False
+
+			if self.showHint or self.delay == None:
+				self.DrawBackground()
+				self.DrawBorder()
+				self.DrawText()
+
+
 class TextInputBox(Label):
 	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
 		self.splashText = splashText
@@ -831,6 +870,8 @@ class Button(Label):
 		self.borderColor = self.inactiveColor
 		self.toggle = inputData.get("toggle", False)
 
+		self.hint = drawData.get("hint", None)
+
 		self.darkenPercentage = drawData.get("darkenPercentage", 80)
 
 		self.keyBinds = inputData.get("keyBinds", {"activeType": pg.MOUSEBUTTONDOWN, "active": 1, "releaseType": pg.MOUSEBUTTONUP, "nameType": "mouse"})
@@ -844,11 +885,15 @@ class Button(Label):
 			self.DrawBorder()
 			self.DrawText()
 
+			if self.hint != None:
+				self.hint.Draw()
+
 			if self.rect.collidepoint(pg.mouse.get_pos()):
 				self.t += self.step
 
 				self.t = min(max(self.t, 0), 1)
 				self.backgroundColor = LerpColor(self.backgroundColor, ChangeColorBrightness(self.ogBackgroundColor, self.darkenPercentage), self.t)
+
 			else:
 				self.t -= self.step
 
@@ -915,6 +960,8 @@ class Slider(Label):
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
 
 		self.isVertical = inputData.get("isVertical", True if self.rect.w < self.rect.h else False)
+		self.startingValue = inputData.get("startingValue", 0)
+		self.onValueChange = inputData.get("onValueChange", None)
 		self.sliderButtonSize = drawData.get("sliderButtonSize", [self.rect.w / 10, self.rect.h] if not self.isVertical else [self.rect.w, self.rect.h / 10])
 
 		self.buttonData = buttonData
@@ -947,6 +994,7 @@ class Slider(Label):
 			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
 
 		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.borderColor), self.buttonData.get("activeColor", InvertColor(self.borderColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		self.SetValue(self.startingValue)
 
 	def GetMousePos(self):
 		self.startMousePos = pg.mouse.get_pos()
@@ -985,7 +1033,18 @@ class Slider(Label):
 		else:
 			self.value = round((self.sliderButton.rect.y - self.rect.y - self.borderWidth) / (self.rect.h - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
 
+		if self.onValueChange != None:
+			if callable(self.onValueChange):
+				self.result = self.onValueChange(self.value)
+
 		return self.value
+
+	def SetValue(self, value):
+		self.value = min(1, max(0, value))
+		if not self.isVertical:
+			self.sliderButton.rect.x = ((self.rect.w - (self.borderWidth * 2) - self.sliderButton.rect.h) * self.value) + self.borderWidth + self.rect.x
+		else:
+			self.sliderButton.rect.y = ((self.rect.h - (self.borderWidth * 2) - self.sliderButton.rect.h) * self.value) + self.borderWidth + self.rect.y
 
 
 class ScollBar(Slider):
@@ -1297,6 +1356,9 @@ class Collection:
 		if addToList:
 			AddToListOrDict(allCollections, self, self.name if self.name != "" else f"collection-{len(self.objects)}")
 
+	def Add(self, obj):
+		self.objects.append(obj)
+
 	def Draw(self):
 		for obj in self.objects:
 			obj.Draw()
@@ -1589,60 +1651,63 @@ if __name__ == "__main__":
 	def HandleEvents(event):
 		HandleGui(event)
 
-	Box((50, 50, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Label((50, 160, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
-	Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
-	TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
-	TextInputBox((50, 500, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
+	def CreateTests():
+		Box((50, 50, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+		Label((50, 160, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
+		Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
+		TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
+		TextInputBox((50, 500, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
-	Slider((50, 600, 300, 35), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
-	Slider((360, 400, 35, 300), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
-	Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
-	Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
+		Slider((50, 600, 300, 35), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
+		Slider((360, 400, 35, 300), (lightBlack, darkWhite), drawData={"header": "HEADER", "roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed})
+		Slider((50, 650, 300, 35), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
+		Slider((440, 410, 35, 290), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}, "background": True})
 
-	scroll_label_1 = Label((540, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
-	scroll_label_2 = Label((700, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
-	ScollBar((540, 640, 150, 25), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_1, name="horizontal")
-	ScollBar((850, 490, 25, 150), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_2, name="vertical")
+		scroll_label_1 = Label((540, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
+		scroll_label_2 = Label((700, 490, 150, 150), (lightBlack, darkWhite), text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velitesse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textData={"fontSize": 18, "alignText": "center-top"})
+		ScollBar((540, 640, 150, 25), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_1, name="horizontal")
+		ScollBar((850, 490, 25, 150), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_2, name="vertical")
 
-	MessageBox((180, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
+		MessageBox((180, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
 
-	HyperLink((490, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
+		HyperLink((490, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
 
-	Switch((540, 160, 200, 100), (lightBlack, white, lightRed, lightBlue), text="Switch", inputData={"firstChoiceText": "First\nchoice", "lastChoiceText": "Last\nchoice"})
-	Switch((540, 270, 200, 100), (lightBlack, white, lightRed, lightBlue), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
-	Switch((540, 380, 200, 100), (lightBlack, white, lightRed, lightBlue), inputData={"firstChoiceText": "First\nchoice", "lastChoiceText": "Last\nchoice"}, textData={"alignText": "center-top"}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False, "topRight": False}})
+		Switch((540, 160, 200, 100), (lightBlack, white, lightRed, lightBlue), text="Switch", inputData={"firstChoiceText": "First\nchoice", "lastChoiceText": "Last\nchoice"})
+		Switch((540, 270, 200, 100), (lightBlack, white, lightRed, lightBlue), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
+		Switch((540, 380, 200, 100), (lightBlack, white, lightRed, lightBlue), inputData={"firstChoiceText": "First\nchoice", "lastChoiceText": "Last\nchoice"}, textData={"alignText": "center-top"}, drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False, "topRight": False}})
 
-	MultiselectButton((750, 50, 200, 200), (lightBlack, white, lightRed), "Mutli-select button", optionData={"options": ["option 1", "option 2", "option 3", "option 4"]})
-	MultiselectButton((960, 50, 200, 200), (lightBlack, white, lightRed), "Mutli-select button", optionData={"options": ["option 1", "option 2", "option 3", "option 4"], "allowNoSelection": True, "optionAlignText": "top"})
+		MultiselectButton((750, 50, 200, 200), (lightBlack, white, lightRed), "Mutli-select button", optionData={"options": ["option 1", "option 2", "option 3", "option 4"]})
+		MultiselectButton((960, 50, 200, 200), (lightBlack, white, lightRed), "Mutli-select button", optionData={"options": ["option 1", "option 2", "option 3", "option 4"], "allowNoSelection": True, "optionAlignText": "top"})
 
-	c1 = Collection([
-		Label((805, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[]),
-		Button((755, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1]),
-		Button((755, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2]),
-		Button((755, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3]),
-		Button((755, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4]),
-		Button((755, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5]),
-		Button((755, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6])
-		], addToList=False)
+		c1 = Collection([
+			Label((805, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[]),
+			Button((755, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1]),
+			Button((755, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2]),
+			Button((755, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3]),
+			Button((755, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4]),
+			Button((755, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5]),
+			Button((755, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6])
+			], addToList=False)
 
-	c2 = Collection([
-		Label((865, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-		Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1})
-		], addToList=False)
+		c2 = Collection([
+			Label((865, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 315, 190, 50), (lightBlack, white, lightRed), text="Button 1", lists=[], onClick=print, onClickArgs=[1], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 370, 190, 50), (lightBlack, white, lightRed), text="Button 2", lists=[], onClick=print, onClickArgs=[2], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1})
+			], addToList=False)
 
-	ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
-	ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
+		ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
+		ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
 
-	ProgressBar((900, 520, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
-	pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
+		ProgressBar((900, 520, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
+		pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
 
-	# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
+		# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
+
+	CreateTests()
 
 	while running:
 		clock.tick_busy_loop(fps)
