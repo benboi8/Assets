@@ -626,7 +626,7 @@ class TextInputBox(Label):
 
 		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFilePath", None)
 		self.allowedKeysFilePath = inputData.get("allowedKeysFilePath", None)
-		self.closeOnMisInput = inputData.get("closeOnMisInput", True)
+		self.closeOnMissInput = inputData.get("closeOnMissInput", True)
 
 		self.nonAllowedKeys = set()
 		self.allowedKeys = set()
@@ -704,13 +704,13 @@ class TextInputBox(Label):
 						else:
 							self.borderColor = self.inactiveColor
 					else:
-						if self.closeOnMisInput:
+						if self.closeOnMissInput:
 							self.active = False
 							self.borderColor = self.inactiveColor
 
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_RETURN:
-					if self.closeOnMisInput:
+					if self.closeOnMissInput:
 						self.active = False
 						self.borderColor = self.inactiveColor
 
@@ -1312,7 +1312,7 @@ class RadioButton(Label):
 
 		self.buttons = buttons
 
-	def AddButton(self, button: Button | dict):
+	def AddButton(self, button):
 		if type(button) == Button:
 			self.buttons.append(button)
 		elif type(button) == dict:
