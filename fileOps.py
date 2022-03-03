@@ -19,6 +19,7 @@ def CheckFileExists(fileName, folder="/"):
 
 def CreateFolder(folderName):
 	if not CheckFolderExists(folderName):
+		print(f"Created Folder at {folderName}")
 		os.mkdir(folderName)
 		return True
 	return False
@@ -26,6 +27,7 @@ def CreateFolder(folderName):
 
 def CreateFile(fileName, folder="/"):
 	if not CheckFileExists(folder, fileName):
+		print(f"Created File at {folder + fileName}")
 		with open(folder + fileName, "w") as file:
 			file.close()
 			return True
@@ -171,6 +173,32 @@ def SaveData(fileName, data, folder="/", fileType="", fileIOType="w", createNewF
 			print("Failed to save. Data isn't type dict.")
 			return False
 
+	else:
+		if type(data) == list:
+			writeData = RecursiveReadList(data)
+
+		elif type(data) == dict:
+			writeData = RecursiveReadDict(data)
+
+		else:
+			writeData = [data]
+
+		with open(path, fileIOType) as file:
+			for d in writeData:
+				if fileIOType == "w":
+					if type(d) == tuple:
+						file.write(f"{d[0]}:{d[1]}\n")
+					else:
+						file.write(f"{d}\n")
+				elif fileIOType == "a":
+					if type(d) == tuple:
+						file.append(f"{d[0]}:{d[1]}\n")
+					else:
+						file.append(f"{d}\n")
+
+			file.close()
+
+	print(f"Saved Data to {folder + fileName + fileType}")
 
 	return True
 
@@ -261,6 +289,7 @@ def ConvertStringToType(txt):
 
 
 def RemoveFile(filePath):
+	print(f"Removed File at {filePath}")
 	os.remove(filePath)
 
 

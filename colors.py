@@ -16,6 +16,9 @@ blue = (0, 0, 255)
 lightRed = (255, 41, 41)
 lightGreen = (41, 255, 41)
 lightBlue = (4, 179, 255)
+darkRed = (165, 0, 0)
+darkGreen = (0, 100, 0)
+darkBlue = (0, 0, 139)
 yellow = (255, 255, 0)
 magenta = (255, 0, 255)
 cyan = (0, 255, 255)
@@ -23,10 +26,11 @@ orange = (255, 145, 0)
 pink = (255, 4, 179)
 brown = (56, 27, 8)
 purple = (128, 0, 128)
+olive = (128, 128, 0)
 beige = (245, 245, 220)
 tan = (210, 180, 140)
 peach = (255, 153, 102)
-
+bloodRed = (153,25,25)
 
 def RandomColor(minR = 0, minG = 0, minB = 0, maxR = 255, maxG = 255, maxB = 255):
 	return (randint(minR, maxR), randint(minG, maxG), randint(minB, maxB))\
@@ -48,35 +52,15 @@ if __name__ == "__main__":
 	import pygame as pg
 	pg.init()
 	
-	colors = {
-		"white": white, 
-		"black": black, 
-		"lightGray": lightGray, 
-		"darkGray": darkGray, 
-		"gray": gray, 
-		"darkWhite": darkWhite, 
-		"lightBlack": lightBlack, 
-		"red": red, 
-		"green": green, 
-		"blue": blue, 
-		"lightRed": lightRed, 
-		"lightGreen": lightGreen, 
-		"lightBlue": lightBlue, 
-		"yellow": yellow, 
-		"magenta": magenta, 
-		"cyan": cyan, 
-		"orange": orange, 
-		"pink": pink, 
-		"brown": brown,
-		"purple": purple,
-		"beige": beige,
-		"tan": tan,
-		"peach": peach,
-		}
+	colors = {}
+	globs = globals().copy()
+	for c in globs:
+		if type(globals()[c]) == tuple:
+			colors[c] = (globals()[c])
 
 	size = 20
 
-	screenSize = (500, 500)
+	screenSize = (500, len(colors) * size)
 
 	screen = pg.display.set_mode(screenSize)
 

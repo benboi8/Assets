@@ -563,7 +563,7 @@ class Label(Box):
 
 
 class Hint(Label):
-	def __init__(self, rect, colors, parent, text="", delay=None, name="", surface=screen, drawData={}, textData={}):
+	def __init__(self, rect, colors, parent, text="", delay=60000, name="", surface=screen, drawData={}, textData={}):
 		"""Delay: In microseconds, max of 1 minute"""
 
 		super().__init__(rect, colors, text, name, surface, drawData, textData, [])
@@ -626,7 +626,7 @@ class TextInputBox(Label):
 
 		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFilePath", None)
 		self.allowedKeysFilePath = inputData.get("allowedKeysFilePath", None)
-		self.closeOnMissInput = inputData.get("closeOnMissInput", True)
+		self.closeOnMisInput = inputData.get("closeOnMisInput", True)
 
 		self.nonAllowedKeys = set()
 		self.allowedKeys = set()
@@ -704,13 +704,13 @@ class TextInputBox(Label):
 						else:
 							self.borderColor = self.inactiveColor
 					else:
-						if self.closeOnMissInput:
+						if self.closeOnMisInput:
 							self.active = False
 							self.borderColor = self.inactiveColor
 
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_RETURN:
-					if self.closeOnMissInput:
+					if self.closeOnMisInput:
 						self.active = False
 						self.borderColor = self.inactiveColor
 
@@ -769,6 +769,8 @@ class TextInputBox(Label):
 			if self.replaceSplashText:
 				if self.text == self.splashText:
 					self.text = ""
+		else:
+			return
 
 		if self.font.render(str(self.text + key), True, self.fontColor).get_width() + 2 >= self.rect.w:
 			return
@@ -1312,7 +1314,7 @@ class RadioButton(Label):
 
 		self.buttons = buttons
 
-	def AddButton(self, button):
+	def AddButton(self, button: Button | dict):
 		if type(button) == Button:
 			self.buttons.append(button)
 		elif type(button) == dict:
@@ -1404,6 +1406,8 @@ class ExpandableMenu(Box):
 			self.rect = self.closedRect
 			if self.roundedCorners:
 				self.roundness = self.closedData.get("roundness", self.roundness)
+		
+		self.openButton.UpdateText("Open" if not self.opened else "Close")
 
 	def Draw(self):
 		self.DrawBackground()
@@ -1668,9 +1672,10 @@ if __name__ == "__main__":
 		ScollBar((540, 640, 150, 25), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_1, name="horizontal")
 		ScollBar((850, 490, 25, 150), (lightBlack, darkWhite), buttonData={"backgroundColor": lightBlack, "inactiveColor": darkWhite, "activeColor": lightRed}, scrollObj=scroll_label_2, name="vertical")
 
-		MessageBox((180, 50, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
+		MessageBox((180, 10, 300, 200), (lightBlack, darkWhite), text="Message box title", messageBoxData={"colors": (lightBlack, darkWhite), "text": "This is message box"}, confirmButtonData={"colors": (lightBlack, darkWhite, lightRed)}, cancelButtonData={"colors": (lightBlack, darkWhite, lightRed)})
 
-		HyperLink((490, 50, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
+		h = HyperLink((180, 230, 200, 50), (lightBlack, white, lightRed), "https://www.youtube.com/", "YouTube")
+		h.hint = Hint((180, 285, 200, 50), (lightBlack, white), h, "https://www.youtube.com/", textData={"fontSize": 15})
 
 		Switch((540, 160, 200, 100), (lightBlack, white, lightRed, lightBlue), text="Switch", inputData={"firstChoiceText": "First\nchoice", "lastChoiceText": "Last\nchoice"})
 		Switch((540, 270, 200, 100), (lightBlack, white, lightRed, lightBlue), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
