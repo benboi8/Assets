@@ -148,6 +148,9 @@ class Sequence:
 
 # fix direction
 class Vec2:
+	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
+		return Vec2(randint(minX * 10, maxX * 10) / 10, randint(minY * 10, maxY * 10) / 10)
+
 	def __init__(self, x, y, lists=[all2DVectors]):
 		self.x = x
 		self.y = y
