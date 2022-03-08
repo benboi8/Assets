@@ -148,6 +148,9 @@ class Sequence:
 
 # fix direction
 class Vec2:
+	origin = (0, 0)
+	
+
 	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
 		return Vec2(randint(minX * 10, maxX * 10) / 10, randint(minY * 10, maxY * 10) / 10)
 
@@ -210,8 +213,15 @@ class Vec2:
 			return self.Divide((sqrt(magSq), sqrt(magSq))).Multiply((maxValue, maxValue))
 		return self
 
-	def Direction(self, pointOfDirection):
+	def DirectionToPoint(self, pointOfDirection):
 		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
+
+	def Direction(self):
+		try:
+			d = degrees(GetAngle(Vec2.origin, (Vec2.origin[0] + 10, Vec2.origin[1]), (self.x, self.y)))
+			return d
+		except ZeroDivisionError:
+			return 0.0
 
 	def Dot(self, vec):
 		return self.x * vec.x + self.y * vec.y
