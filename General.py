@@ -146,7 +146,6 @@ class Sequence:
 				self.Kill()
 
 
-# fix direction
 class Vec2:
 	origin = (0, 0)
 	
@@ -154,10 +153,9 @@ class Vec2:
 	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
 		return Vec2(randint(minX * 10, maxX * 10) / 10, randint(minY * 10, maxY * 10) / 10)
 
-	def __init__(self, x, y, lists=[all2DVectors]):
+	def __init__(self, x, y, lists=[]):
 		self.x = x
 		self.y = y
-		self.origin = x, y
 		AddToListOrDict(lists, self)
 
 	def ToString(self):
@@ -179,26 +177,46 @@ class Vec2:
 	def Add(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x + vec.x, self.y + vec.y)
+		
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x + vec, self.y + vec)
+		
 		return Vec2(self.x + vec[0], self.y + vec[1])
 
 	def Sub(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x - vec.x, self.y - vec.y)
+
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x - vec, self.y - vec)
+
 		return Vec2(self.x - vec[0], self.y - vec[1])
 
 	def Multiply(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x * vec.x, self.y * vec.y)
+
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x * vec, self.y * vec)
+
 		return Vec2(self.x * vec[0], self.y * vec[1])
 
 	def Divide(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x / vec.x, self.y / vec.y)
+		
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x / vec, self.y / vec)
+		
 		return Vec2(self.x / vec[0], self.y / vec[1])
 
 	def IntDivide(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x // vec.x, self.y // vec.y)
+		
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x // vec, self.y // vec)
+		
 		return Vec2(self.x // vec[0], self.y // vec[1])
 
 	def Magnitude(self):
@@ -207,11 +225,17 @@ class Vec2:
 	def MagnitudeSquared(self):
 		return (self.x ** 2) + (self.y ** 2)
 
+	def SetMagnitude(self, mag):
+		try:
+			return Vec2(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude())
+		except ZeroDivisionError:
+			return self.Copy()
+
 	def Limit(self, maxValue):
 		magSq = self.MagnitudeSquared()
 		if magSq > maxValue ** 2:
 			return self.Divide((sqrt(magSq), sqrt(magSq))).Multiply((maxValue, maxValue))
-		return self
+		return self.Copy()
 
 	def DirectionToPoint(self, pointOfDirection):
 		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
@@ -240,24 +264,37 @@ class Vec2:
 		return abs(self.x - pos[0]) + abs(self.y - pos[1])
 
 	def Normalize(self):
-		return self.Multiply(Vec2(1 / self.Magnitude(), 1 / self.Magnitude()))
+		try:
+			# return self.Multiply(Vec2(1 / self.Magnitude(), 1 / self.Magnitude()))
+			return Vec2(self.x / self.Magnitude(), self.y / self.Magnitude())
+		except ZeroDivisionError:
+			return Vec2(0, 0)
 
 	def RotateRadians(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
-			pointOfRot = self.origin
+			pointOfRot = (self.x, self.y)
+
+		if isinstance(pointOfRot, Vec2):
+			pointOfRot = (pointOfRot.x, pointOfRot.y)
+
 		angle += (225 * (pi / 180))
 		angle *= -1
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
 	def RotateDegrees(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
-			pointOfRot = self.origin
+			pointOfRot = (self.x, self.y)
+
+		if isinstance(pointOfRot, Vec2):
+			pointOfRot = (pointOfRot.x, pointOfRot.y)
+
 		angle = radians(angle)
 		angle += (225 * (pi / 180))
 		angle *= -1
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
 
+# update
 class Vec3(Vec2):
 	def __init__(self, x, y, z, lists=[all3DVectors]):
 		super().__init__(x, y, lists)
@@ -512,6 +549,26 @@ def GetAngle(p1, p2, p3):
 	return (acos((p1.GetEuclideanDistance((p2.x, p2.y)) ** 2 + p1.GetEuclideanDistance((p3.x, p3.y)) ** 2 - p2.GetEuclideanDistance((p3.x, p3.y)) ** 2) / (2 * p1.GetEuclideanDistance((p2.x, p2.y)) * p1.GetEuclideanDistance((p3.x, p3.y))))) * mult
 
 
+def Constrain(v, mini, maxi):
+	return max(mini, min(maxi, v))
+
+# different to python 'map'
+def Map(value, start1, stop1, start2, stop2, withinBounds=True):
+	newVal = (value - start1) / (stop1 - start1) * (stop2 - start2) + start2
+
+	if not withinBounds:
+		return newVal
+
+	if start2 < stop2:
+		return Constrain(newVal, start2, stop2)
+	else:
+		return Constrain(newVal, stop2, start2)
+
 
 if __name__ == "__main__":
-	pass
+	timer = Timer()
+	v1 = Vec2(334, 432)
+
+	timer.Start()
+	print(v1.Direction())
+	timer.Stop()

@@ -78,13 +78,17 @@ ChangeFontSize(24)
 
 
 
-def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=3, surface=screen):
+def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, radius=2, surface=screen):
 	if magnitude == None:
 		magnitude = vector.Magnitude()
 
 	pg.draw.circle(surface, colors[0], (vector.x, vector.y), radius)
-	d = vector.Direction(directionPoint)
-	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d[0] * magnitude), vector.y + (d[1] * magnitude)))
+	# d = vector.Direction(directionPoint)
+	# pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d[0] * magnitude), vector.y + (d[1] * magnitude)))
+
+	# vector = vector.Normalize()
+	d = radians(vector.Direction())
+	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (10 * cos(d)), vector.y + (10 * sin(d))))
 
 
 def DrawRectOutline(color, rect, width=1, surface=screen):
@@ -246,9 +250,9 @@ def MoveRectWithoutCenter(startPos, startRect):
 
 
 def DrawRectAlpha(surface, color, rect):
-    shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
-    pg.draw.rect(shape_surf, color, shape_surf.get_rect())
-    surface.blit(shape_surf, rect)
+	shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
+	pg.draw.rect(shape_surf, color, shape_surf.get_rect())
+	surface.blit(shape_surf, rect)
 
 
 def DrawCircleAlpha(surface, color, center, radius):
@@ -259,12 +263,33 @@ def DrawCircleAlpha(surface, color, center, radius):
 
 
 def DrawPolygonAlpha(surface, color, points):
-    lx, ly = zip(*points)
-    min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-    target_rect = pg.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-    shape_surf = pg.Surface(target_rect.size, pg.SRCALPHA)
-    pg.draw.polygon(shape_surf, color, [(x - min_x, y - min_y) for x, y in points])
-    surface.blit(shape_surf, target_rect)
+	lx, ly = zip(*points)
+	min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
+	target_rect = pg.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+	shape_surf = pg.Surface(target_rect.size, pg.SRCALPHA)
+	pg.draw.polygon(shape_surf, color, [(x - min_x, y - min_y) for x, y in points])
+	surface.blit(shape_surf, target_rect)
+
+
+def CircleLineSegmentIntersection(circle_center, circle_radius, pt1, pt2, full_line=True, tangent_tol=1e-9):
+	(p1x, p1y), (p2x, p2y), (cx, cy) = pt1, pt2, circle_center
+	(x1, y1), (x2, y2) = (p1x - cx, p1y - cy), (p2x - cx, p2y - cy)
+	dx, dy = (x2 - x1), (y2 - y1)
+	dr = (dx ** 2 + dy ** 2)**.5
+	big_d = x1 * y2 - x2 * y1
+	discriminant = circle_radius ** 2 * dr ** 2 - big_d ** 2
+
+	if discriminant < 0:  # No intersection between circle and line
+		return []
+	else:  # There may be 0, 1, or 2 intersections with the segment
+		intersections = [(cx + (big_d * dy + sign * (-1 if dy < 0 else 1) * dx * discriminant**.5) / dr ** 2, cy + (-big_d * dx + sign * abs(dy) * discriminant**.5) / dr ** 2) for sign in ((1, -1) if dy < 0 else (-1, 1))]  # This makes sure the order along the segment is correct
+		if not full_line:  # If only considering the segment, filter out intersections that do not fall within the segment
+			fraction_along_segment = [(xi - p1x) / dx if abs(dx) > abs(dy) else (yi - p1y) / dy for xi, yi in intersections]
+			intersections = [pt for pt, frac in zip(intersections, fraction_along_segment) if 0 <= frac <= 1]
+		if len(intersections) == 2 and abs(discriminant) <= tangent_tol:  # If line is tangent to circle, return just one point (as both intersections have same location)
+			return [intersections[0]]
+		else:
+			return intersections
 
 
 class RayCast:
@@ -1672,6 +1697,10 @@ if __name__ == "__main__":
 
 		DrawAllGUIObjects()
 
+		for vector in all2DVectors:
+			DrawVector(vector, (white, white))
+
+
 		pg.display.update()
 
 	def HandleEvents(event):
@@ -1734,7 +1763,16 @@ if __name__ == "__main__":
 
 		# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
 
-	CreateTests()
+	# CreateTests()
+
+	# Vec2.origin = (width // 2, height // 2)
+
+	n = 100
+	for x in range(width // n):
+		for y in range(height // n):
+			Vec2((x + 1) * n, (y + 1) * n)
+
+
 
 	while running:
 		clock.tick_busy_loop(fps)
