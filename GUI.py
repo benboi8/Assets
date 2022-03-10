@@ -1361,7 +1361,7 @@ class RadioButton(Label):
 
 		self.buttons = buttons
 
-	def AddButton(self, button: Button | dict):
+	def AddButton(self, button):
 		if type(button) == Button:
 			self.buttons.append(button)
 		elif type(button) == dict:
@@ -1763,7 +1763,7 @@ if __name__ == "__main__":
 
 		# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
 
-	# CreateTests()
+	CreateTests()
 
 	# Vec2.origin = (width // 2, height // 2)
 
