@@ -293,7 +293,7 @@ def CircleLineSegmentIntersection(circle_center, circle_radius, pt1, pt2, full_l
 
 
 class RayCast:
-	def Cast(self, p1, p2, walls):
+	def Cast(p1, p2, walls):
 		for wall in walls:
 			x1, y1 = p1
 			x2, y2 = p2
@@ -307,9 +307,9 @@ class RayCast:
 				if 0 <= t <= 1:
 					l1 = ((x1 + t * (x2 - x1)), (y1 + t * (y2 - y1)))
 					if l1 > (x3, y3) and l1 < (x4, y4):
-						self.ray = Vec2(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
-						return True
-		return False
+						ray = Vec2(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+						return ray
+		return None
 
 
 class Point(Vec2):
@@ -1768,14 +1768,6 @@ if __name__ == "__main__":
 		# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
 
 	CreateTests()
-
-	# Vec2.origin = (width // 2, height // 2)
-
-	n = 100
-	for x in range(width // n):
-		for y in range(height // n):
-			Vec2((x + 1) * n, (y + 1) * n)
-
 
 
 	while running:

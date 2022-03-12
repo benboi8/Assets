@@ -556,4 +556,4 @@ def Map(value, start1, stop1, start2, stop2, withinBounds=True):
 
 
 if __name__ == "__main__":
-	v1 = Vec2(2.15, 2.50)
+	pass
