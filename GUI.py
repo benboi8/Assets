@@ -587,16 +587,16 @@ class Label(Box):
 			if not recursive:
 				self.CreateTextObjects(True, self.minWidth, self.minHeight)
 
-	def Draw(self):
+	def Draw(self, byPassRectCheck=False):
 		if not self.disabled:
 			self.DrawBackground()
 			self.DrawBorder()
-			self.DrawText()
+			self.DrawText(byPassRectCheck)
 
-	def DrawText(self):
+	def DrawText(self, byPassRectCheck=False):
 		for obj in self.textObjs:
 			rect = pg.Rect(obj[1][0], obj[1][1] - (self.scrollLevel * obj[0].get_height()), obj[0].get_width(), obj[0].get_height())
-			if self.rect.x < rect.x and self.rect.y < rect.y and self.rect.x + self.rect.w > rect.x + rect.w and self.rect.y + self.rect.h > rect.y + rect.h:
+			if self.rect.x < rect.x and self.rect.y < rect.y and self.rect.x + self.rect.w > rect.x + rect.w and self.rect.y + self.rect.h > rect.y + rect.h or byPassRectCheck:
 				self.surface.blit(obj[0], rect)
 
 	def UpdateText(self, text):
@@ -1167,7 +1167,10 @@ class ProgressBar(Box):
 	def __init__(self, rect, colors, text="", name="", surface=screen, value=0, drawData={}, textData={}, headerData={}, lists=[allProgressBars]):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
-		self.header = Label((self.rect.x, self.rect.y - headerData.get("headerHeight", 35), headerData.get("headerWidth", self.rect.w), 35), colors, text, name, surface, drawData, textData, lists=[])
+		if headerData.get("enableHeader", True):
+			self.header = Label((self.rect.x, self.rect.y - headerData.get("headerHeight", 35), headerData.get("headerWidth", self.rect.w), 35), colors, text, name, surface, drawData, textData, lists=[])
+		else:
+			self.header = None
 
 		self.value = value
 
@@ -1178,7 +1181,8 @@ class ProgressBar(Box):
 	def Draw(self):
 		self.DrawBackground()
 		self.DrawBorder()
-		self.header.Draw()
+		if self.header != None:
+			self.header.Draw()
 		self.bar.Draw()
 
 	def ChangeValue(self, v):

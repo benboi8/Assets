@@ -66,7 +66,22 @@ class World:
 
 
 # camera
-# P:\Python Projects\2d platformer
+
+class CameraBase:
+	w, h = width, height
+	rect = pg.Rect(0, 0, w, h)
+	defaultPos = (rect.x, rect.y)
+
+	def Draw():
+		DrawRectOutline(black, CameraBase.rect)
+
+	def ChangePos(x, y):
+		CameraBase.rect = pg.Rect(x, y, CameraBase.rect.x, CameraBase.rect.h)
+		CameraBase.defaultPos = (CameraBase.rect.x, CameraBase.rect.y)
+
+	def ChangeSize(w, h):
+		CameraBase.rect = pg.Rect(CameraBase.rect.x, CameraBase.rect.y, w, h)
+
 
 # entity
 # P:\Python Projects\2d platformer

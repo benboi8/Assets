@@ -157,8 +157,69 @@ class Vec2:
 		self.y = y
 		AddToListOrDict(lists, self)
 
-	def ToString(self):
-		return f"x:{self.x} y:{self.y}"
+	def __add__(self, vec):
+		return self.Add(vec)
+
+	def __sub__(self, vec):
+		return self.Sub(vec)
+
+	def __mul__(self, vec):
+		return self.Multiply(vec)
+
+	def __floordiv__(self, vec):
+		return self.IntDivide(vec)
+
+	def __truediv__(self, vec):
+		return self.Divide(vec)
+
+	def __eq__(self, vec):
+		if isinstance(vec, Vec2):
+			return self.x == vec.x and self.y == vec.y
+		elif isinstance(vec, (tuple, list)):
+			return self.x == vec[0] and self.y == vec[1]
+
+	def __ne__(self, vec):
+		if isinstance(vec, Vec2):
+			return self.x != vec.x or self.y != vec.y
+		elif isinstance(vec, (tuple, list)):
+			return self.x != vec[0] or self.y != vec[1]
+
+	def __pow__(self, vec):
+		if isinstance(vec, Vec2):
+			return Vec2(self.x ** vec.x, self.y ** vec.y)
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x ** vec, self.y ** vec)
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x ** vec[0], self.y ** vec[1])
+
+	def __mod__(self, vec):
+		if isinstance(vec, Vec2):
+			return Vec2(self.x % vec.x, self.y % vec.y)
+		if isinstance(vec, (int, float)):
+			return Vec2(self.x % vec, self.y % vec)
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x % vec[0], self.y % vec[1])
+
+	def __dir__(self):
+		return {"x": self.x, "y": self.y, "magnitude": self.Magnitude(), "direction": self.Direction(), "type": type(self)}
+
+	def __str__(self):
+		return f"x: {self.x} y: {self.y} magnitude: {self.Magnitude()} direction: {self.Direction()} type: {type(self)}"
+
+	def __round__(self, n=1):
+		return Vec2(round(self.x, n), round(self.y, n))
+
+	@property
+	def mag(self):
+		return self.Magnitude()
+
+	@property
+	def magSq(self):
+		return self.MagnitudeSquared()
+
+	@property
+	def dir(self):
+		return self.Direction()
 
 	def Set(self, x, y):
 		self.x = x
@@ -216,7 +277,8 @@ class Vec2:
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x // vec, self.y // vec)
 		
-		return Vec2(self.x // vec[0], self.y // vec[1])
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x // vec[0], self.y // vec[1])
 
 	def Magnitude(self):
 		return sqrt(self.MagnitudeSquared())
@@ -293,76 +355,7 @@ class Vec2:
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
 
-# update
-class Vec3(Vec2):
-	def __init__(self, x, y, z, lists=[all3DVectors]):
-		super().__init__(x, y, lists)
-		self.z = z
-
-	def ToString(self):
-		return f"x:{self.x} y:{self.y} z:{self.z}"
-
-	def Set(self, x, y):
-		self.x = x
-		self.y = y
-
-	def SetX(self, x):
-		self.x = x
-
-	def SetY(self, y):
-		self.y = y
-
-	def SetZ(self, z):
-		self.z = z
-
-	def Copy(self):
-		return Vec3(self.x, self.y, self.z)
-
-	def Add(self, vec):
-		return (self.x + vec[0], self.y + vec[1], self.z + vec[2])
-
-	def Sub(self, vec):
-		return (self.x - vec[0], self.y - vec[1], self.z - vec[2])
-
-	def Multiply(self, vec):
-		return (self.x * vec[0], self.y * vec[1], self.z * vec[2])
-
-	def Divide(self, vec):
-		return (self.x / vec[0], self.y / vec[1], self.z / vec[2])
-
-	def IntDivide(self, vec):
-		return (self.x // vec[0], self.y // vec[1], self.z / vec[2])
-
-	def Magnitude(self):
-		return sqrt(self.MagnitudeSquared())
-
-	def MagnitudeSquared(self):
-		return (self.x ** 2) + (self.y ** 2) + (self.z ** 2)
-
-	def Direction(self, pointOfDirection):
-		return pointOfDirection[0] - self.x, pointOfDirection[1] - self.y, pointOfDirection[2] - self.z
-
-	def Dot(self, vec):
-		return self.x * vec.x + self.y * vec.y + self.z * vec.z
-
-	def Cross(self, vec):
-		return (self.x * vec.x - self.y * vec.y - self.z * vec.z)
-
-	def GetEuclideanDistance(self, pos):
-		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2 + (self.z - pos[2]) ** 2)
-
-	def GetTaxicabDistance(self, pos):
-		return abs(self.x - pos[0]) + abs(self.y - pos[1]) + abs(self.z - pos[2])
-
-	def Normalize(self):
-		return self.Multiply((1 / self.Magnitude(), 1 / self.Magnitude(), 1 / self.Magnitude()))
-
-	# quaternions
-	def RotateRadians(self, angle, distanceToRotPoint, pointOfRot=None):
-		pass
-
-	def RotateDegrees(self, angle, distanceToRotPoint, pointOfRot=None):
-		pass
+# add vec3
 
 
 # used to time how long a function takes to run
@@ -388,7 +381,6 @@ class Timer:
 		self.LogResults(log, extraData)
 		
 		return self.startTime, self.endTime, difference
-
 
 	def LogResults(self, log=None, extraData={}):
 		difference = self.GetDiff()
@@ -439,7 +431,6 @@ class Timer:
 
 					file.close()
 
-	# arg 'function' takes a 'Func' or a 'sequence'
 	def Record(self, function, log=None, extraData={}, printResult=True, *args, **kwargs):
 		self.Start()
 
@@ -565,9 +556,4 @@ def Map(value, start1, stop1, start2, stop2, withinBounds=True):
 
 
 if __name__ == "__main__":
-	timer = Timer()
-	v1 = Vec2(334, 432)
-
-	timer.Start()
-	print(v1.Direction())
-	timer.Stop()
+	v1 = Vec2(2.15, 2.50)
