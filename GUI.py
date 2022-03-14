@@ -616,7 +616,7 @@ class Hint(Label):
 		super().__init__(rect, colors, text, name, surface, drawData, textData, [])
 
 		self.parent = parent
-		self.delay = abs(min(delay, 60000000))
+		self.delay = Constrain(delay, 0, 60000000)
 		self.startTime = dt.datetime.now()
 		self.hasStartTimeUpdated = False
 		self.showHint = False
@@ -673,7 +673,7 @@ class TextInputBox(Label):
 
 		self.nonAllowedKeysFilePath = inputData.get("nonAllowedKeysFilePath", None)
 		self.allowedKeysFilePath = inputData.get("allowedKeysFilePath", None)
-		self.closeOnMisInput = inputData.get("closeOnMisInput", True)
+		self.closeOnMissInput = inputData.get("closeOnMissInput", True)
 
 		self.nonAllowedKeys = set()
 		self.allowedKeys = set()
@@ -751,13 +751,13 @@ class TextInputBox(Label):
 						else:
 							self.borderColor = self.inactiveColor
 					else:
-						if self.closeOnMisInput:
+						if self.closeOnMissInput:
 							self.active = False
 							self.borderColor = self.inactiveColor
 
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_RETURN:
-					if self.closeOnMisInput:
+					if self.closeOnMissInput:
 						self.active = False
 						self.borderColor = self.inactiveColor
 

@@ -84,7 +84,9 @@ class CameraBase:
 
 
 # entity
-# P:\Python Projects\2d platformer
+
+
+
 
 # player controller
 # P:\Python Projects\2d platformer
@@ -119,6 +121,10 @@ class ParticleSystem:
 	allEmitters = []
 	maxParticles = 2000
 
+	# fix particle forces being applied
+	# acceleration not being calculated correctly 
+	# replicate p:\Python Projects\particle systems\main.py
+
 	class Particle(Vec2):
 		# default values
 		gravity = Vec2(0, 0.1)
@@ -149,6 +155,8 @@ class ParticleSystem:
 		def __init__(self, x, y, startVelocity=None, startAcceleration=Vec2(0, 0), **kwargs):
 			super().__init__(x, y, lists=[ParticleSystem.allParticles])
 
+			if isinstance(startVelocity, str):
+				startVelocity = self.ConvertStringToRandom(startVelocity)
 			self.velocity = Vec2.Random(-3, 3, -3, 3) if startVelocity == None else startVelocity
 			self.acceleration = startAcceleration
 
@@ -197,27 +205,40 @@ class ParticleSystem:
 			if y:
 				if self.y >= height - self.radius:
 					self.y = height - self.radius
-					self.velocity.y *= self.bounceloss.y
+					self.velocity.y *= self.bounceloss[1]
 
 				if self.y <= self.radius:
 					self.y = self.radius
-					self.velocity.y *= self.bounceloss.y
+					self.velocity.y *= self.bounceloss[1]
 
 			if x:
 				if self.x >= width - self.radius:
 					self.x = width - self.radius
-					self.velocity.x *= self.bounceloss.x
+					self.velocity.x *= self.bounceloss[0]
 
 				if self.x <= self.radius:
 					self.x = self.radius
-					self.velocity.x *= self.bounceloss.x
-
+					self.velocity.x *= self.bounceloss[0]
 
 		def ApplyForces(self):
 			for force in self.externalForces:
+				if isinstance(force, str):
+					force = self.ConvertStringToRandom(force)	
+
 				self.ApplyForce(force)
 
 			self.ApplyForce(self.gravity)
+
+		def ConvertStringToRandom(self, string):
+			if "random" in string:
+				string = string.split(":")[1].split(",")
+
+			force = []
+			for s in string:
+				force.append(float(s))
+
+			return Vec2.Random(force[0], force[1], force[2], force[3])
+
 
 		# water
 		# fire
@@ -239,6 +260,7 @@ class ParticleSystem:
 		# stop
 		# duration
 		# loop
+
 	class Emitter:
 		maxNumOfParticles = 300
 
@@ -246,8 +268,10 @@ class ParticleSystem:
 		particle_color = white
 		particle_paths = [(white, "textures/particles/soft_1.png")]
 		particle_colliders = []
+		particle_externalForces = []
 		particle_life_reduction = 5
 		particle_gravity = Vec2(0, 0.3, lists=[])
+		particle_startVelocity = None
 		particle_bounceloss = Vec2(-0.95, -randint(3, 4) / 10, lists=[])
 		emission_rate = 3
 		emission_area = (3, 3)
@@ -267,9 +291,11 @@ class ParticleSystem:
 			self.particle_colliders = ParticleSystem.Emitter.particle_colliders
 			self.particle_gravity = ParticleSystem.Emitter.particle_gravity
 			self.particle_life_reduction = ParticleSystem.Emitter.particle_life_reduction
+			self.particle_startVelocity = ParticleSystem.Emitter.particle_startVelocity
+			self.particle_externalForces = ParticleSystem.Emitter.particle_externalForces
 			self.emission_rate = ParticleSystem.Emitter.emission_rate
-			
 			self.emission_area = ParticleSystem.Emitter.emission_area
+
 			self.rect = pg.Rect(self.pos.x, self.pos.y, self.emission_area[0], self.emission_area[1])
 
 			for key, value in kwargs.items():
@@ -291,8 +317,9 @@ class ParticleSystem:
 		def CreateParticle(self):
 			for i in range(self.emission_rate):
 				if len(self.emittedParticles) <= self.maxNumOfParticles and len(ParticleSystem.allParticles) <= ParticleSystem.maxParticles:
-					ParticleSystem.Particle(randint(self.rect.x, self.rect.x + self.rect.w), randint(self.rect.y, self.rect.y + self.rect.h), radius=self.particle_size, color=self.particle_color,
-					 img_paths=self.particle_paths, lifeReduction=self.particle_life_reduction, bounceloss=self.particle_bounceloss, gravity=self.particle_gravity)
+					ParticleSystem.Particle(randint(self.rect.x, self.rect.x + self.emission_area[0]), randint(self.rect.y, self.rect.y + self.emission_area[1]), radius=self.particle_size, 
+						color=self.particle_color, img_paths=self.particle_paths, lifeReduction=self.particle_life_reduction, bounceloss=self.particle_bounceloss, 
+						gravity=self.particle_gravity, externalForces=self.particle_externalForces, startVelocity=self.particle_startVelocity)
 
 		def Update(self):
 			self.CreateParticle()
@@ -313,7 +340,7 @@ class ParticleSystem:
 if __name__ == "__main__":
 
 	def DrawLoop():
-		screen.fill(darkGray)
+		screen.fill(black)
 
 		DrawAllGUIObjects()
 
@@ -331,7 +358,9 @@ if __name__ == "__main__":
 		for emitter in ParticleSystem.allEmitters:
 			emitter.HandleEvent(event)
 
-	ParticleSystem.Emitter(width // 2, height // 2, particle_gravity=Vec2(0, 0.3))
+	ParticleSystem.Emitter(width // 2 - 25, height - 40, emission_area=(50, 10), particle_bounceloss=(1, 1), particle_startVelocity="random:0,0,0,0",
+	 particle_gravity=Vec2(0, -0.15), particle_life_reduction=3, particle_paths=[(LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_1.png"),
+	  (LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_2.png")], particle_externalForces=["random:0,0.2,0,0"])
 
 	def Update():
 		for particle in ParticleSystem.allParticles:

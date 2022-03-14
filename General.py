@@ -150,7 +150,7 @@ class Vec2:
 	origin = (0, 0)
 
 	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
-		return Vec2(randint(minX * 10, maxX * 10) / 10, randint(minY * 10, maxY * 10) / 10)
+		return Vec2(randint(minX * 1000, maxX * 1000) / 1000, randint(minY * 1000, maxY * 1000) / 1000)
 
 	def __init__(self, x, y, lists=[]):
 		self.x = x
@@ -177,12 +177,16 @@ class Vec2:
 			return self.x == vec.x and self.y == vec.y
 		elif isinstance(vec, (tuple, list)):
 			return self.x == vec[0] and self.y == vec[1]
+		else:
+			return False
 
 	def __ne__(self, vec):
 		if isinstance(vec, Vec2):
 			return self.x != vec.x or self.y != vec.y
 		elif isinstance(vec, (tuple, list)):
 			return self.x != vec[0] or self.y != vec[1]
+		else:
+			raise Exception(f"Argument must be two numbers")
 
 	def __pow__(self, vec):
 		if isinstance(vec, Vec2):
@@ -191,6 +195,8 @@ class Vec2:
 			return Vec2(self.x ** vec, self.y ** vec)
 		if isinstance(vec, (tuple, list)):
 			return Vec2(self.x ** vec[0], self.y ** vec[1])
+		else:
+			raise Exception(f"Argument isn't a number")
 
 	def __mod__(self, vec):
 		if isinstance(vec, Vec2):
@@ -199,15 +205,25 @@ class Vec2:
 			return Vec2(self.x % vec, self.y % vec)
 		if isinstance(vec, (tuple, list)):
 			return Vec2(self.x % vec[0], self.y % vec[1])
+		else:
+			raise Exception(f"Argument isn't a number")
 
 	def __dir__(self):
 		return {"x": self.x, "y": self.y, "magnitude": self.Magnitude(), "direction": self.Direction(), "type": type(self)}
 
 	def __str__(self):
-		return f"x: {self.x} y: {self.y} magnitude: {self.Magnitude()} direction: {self.Direction()} type: {type(self)}"
+		return f"x:{self.x} y:{self.y} magnitude:{self.Magnitude()} direction:{self.Direction()} type:{type(self)}"
 
 	def __round__(self, n=1):
 		return Vec2(round(self.x, n), round(self.y, n))
+
+	def __index__(self, i):
+		if i == 0:
+			return self.x
+		elif i == 1:
+			return self.y
+		else:
+			raise IndexError
 
 	@property
 	def mag(self):
@@ -220,6 +236,10 @@ class Vec2:
 	@property
 	def dir(self):
 		return self.Direction()
+
+	@property
+	def direction(self):
+		return self.dir
 
 	def Set(self, x, y):
 		self.x = x
@@ -237,48 +257,52 @@ class Vec2:
 	def Add(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x + vec.x, self.y + vec.y)
-		
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x + vec, self.y + vec)
-		
-		return Vec2(self.x + vec[0], self.y + vec[1])
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x + vec[0], self.y + vec[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def Sub(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x - vec.x, self.y - vec.y)
-
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x - vec, self.y - vec)
-
-		return Vec2(self.x - vec[0], self.y - vec[1])
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x - vec[0], self.y - vec[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def Multiply(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x * vec.x, self.y * vec.y)
-
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x * vec, self.y * vec)
-
-		return Vec2(self.x * vec[0], self.y * vec[1])
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x * vec[0], self.y * vec[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def Divide(self, vec):
 		if isinstance(vec, Vec2):
-			return Vec2(self.x / vec.x, self.y / vec.y)
-		
+			return Vec2(self.x / vec.x, self.y / vec.y)	
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x / vec, self.y / vec)
-		
-		return Vec2(self.x / vec[0], self.y / vec[1])
+		if isinstance(vec, (tuple, list)):
+			return Vec2(self.x / vec[0], self.y / vec[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def IntDivide(self, vec):
 		if isinstance(vec, Vec2):
 			return Vec2(self.x // vec.x, self.y // vec.y)
-		
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x // vec, self.y // vec)
-		
 		if isinstance(vec, (tuple, list)):
 			return Vec2(self.x // vec[0], self.y // vec[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def Magnitude(self):
 		return sqrt(self.MagnitudeSquared())
@@ -317,12 +341,18 @@ class Vec2:
 	def GetEuclideanDistance(self, pos):
 		if isinstance(pos, Vec2):
 			return sqrt((self.x - pos.x) ** 2 + (self.y - pos.y) ** 2)
-		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
+		if isinstance(pos, (list, tuple)):
+			return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def GetTaxicabDistance(self, pos):
 		if isinstance(pos, Vec2):
 			return abs(self.x - pos.x) + abs(self.y - pos.y)
-		return abs(self.x - pos[0]) + abs(self.y - pos[1])
+		if isinstance(pos, (list, tuple)):
+			return abs(self.x - pos[0]) + abs(self.y - pos[1])
+		else:
+			raise Exception("Argument must be two numbers.")
 
 	def Normalize(self):
 		try:

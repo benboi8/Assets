@@ -26,22 +26,22 @@ class Color(tuple):
 		return Color((Constrain(self.r * c.r, 0, 255), Constrain(self.g * c.g, 0, 255), Constrain(self.b * c.b, 0, 255)))
 
 	def __floordiv__(self, c):
-		return Color((Constrain(self.r // c.r, 0, 255), Constrain(self.g // c.g, 0, 255), Constrain(self.b // c.b, 0, 255), Constrain(self.a // c.a, 0, 255)))
+		return Color((Constrain(self.r // c.r, 0, 255), Constrain(self.g // c.g, 0, 255), Constrain(self.b // c.b, 0, 255)))
 	
 	def __truediv__(self, c):
-		return Color((Constrain(self.r / c.r, 0, 255), Constrain(self.g / c.g, 0, 255), Constrain(self.b / c.b, 0, 255), Constrain(self.a / c.a, 0, 255)))
+		return Color((Constrain(self.r / c.r, 0, 255), Constrain(self.g / c.g, 0, 255), Constrain(self.b / c.b, 0, 255)))
 
 	def __mod__(self, c):
-		return Color((Constrain(self.r % c.r, 0, 255), Constrain(self.g % c.g, 0, 255), Constrain(self.b % c.b, 0, 255), Constrain(self.a % c.a, 0, 255)))
+		return Color((Constrain(self.r % c.r, 0, 255), Constrain(self.g % c.g, 0, 255), Constrain(self.b % c.b, 0, 255)))
 		
 	def __mod__(self, c):
-		return Color((Constrain(self.r ** c.r, 0, 255), Constrain(self.g ** c.g, 0, 255), Constrain(self.b ** c.b, 0, 255), Constrain(self.a ** c.a, 0, 255)))
+		return Color((Constrain(self.r ** c.r, 0, 255), Constrain(self.g ** c.g, 0, 255), Constrain(self.b ** c.b, 0, 255)))
 
 	def __eq__(self, c):
-		return self.r == c.r and self.g == c.g and self.b == c.b and self.a == c.a
+		return self.r == c.r and self.g == c.g and self.b == c.b
 
 	def __ne__(self, c):
-		return self.r != c.r or self.g != c.g or self.b != c.b or self.a != c.a
+		return self.r != c.r or self.g != c.g or self.b != c.b
 
 	def __dir__(self):
 		return {"red": self.r, "green": self.g, "blue": self.b, "alpha": self.a, "type": type(self)}
@@ -53,17 +53,30 @@ class Color(tuple):
 		return Color((self.r * Constrain(percentage / 100, 0, 1), self.g * Constrain(percentage / 100, 0, 1), self.b * Constrain(percentage / 100, 0, 1)))
 
 	def __invert__(self):
-		return self.Invert()
+		return self.Invert
 
+	def Copy(self):
+		return Color((self.r, self.g, self.b, self.a))
+
+	@property
 	def Invert(self):
 		return Color((255 - self.r, 255 - self.g, 255 - self.b, self.a))
 
 	def Lerp(self, c, t):
 		return (Lerp(self.r, c.r, t), Lerp(self.g, c.g, t), Lerp(self.b, c.b, t))
 
+	@property
 	def AsHex(self):
 		return f"#{hex(self.r)[2:].zfill(2)}{hex(self.g)[2:].zfill(2)}{hex(self.b)[2:].zfill(2)}"
+	
+	@property
+	def hex(self):
+		return self.AsHex
 
+	@property
+	def Hex(self):
+		return self.AsHex
+	
 
 def RandomColor(minR = 0, minG = 0, minB = 0, maxR = 255, maxG = 255, maxB = 255):
 	return (randint(minR, maxR), randint(minG, maxG), randint(minB, maxB))\
@@ -120,13 +133,16 @@ if __name__ == "__main__":
 	
 	colors = {}
 	globs = globals().copy()
+	
 	for c in globs:
 		if isinstance(globals()[c], tuple):
 			colors[c] = (globals()[c])
+			colors[f"~{c}"] = ~(globals()[c])
+
 
 	size = 20
 
-	screenSize = (500, len(colors) * size)
+	screenSize = (500, (len(colors) // 2) * size)
 
 	screen = pg.display.set_mode(screenSize)
 
@@ -137,7 +153,8 @@ if __name__ == "__main__":
 	font = pg.font.SysFont("arial", 16)
 
 	for i, key in enumerate(colors):
-		rects.append(pg.Rect(x, y, screenSize[0], size))
+		rects.append(pg.Rect(x, y, screenSize[0] / 2, size))
+		rects.append(pg.Rect(x + screenSize[0] / 2, y, screenSize[0] / 2, size))
 		y += size
 
 		texts.append(font.render(str(key), True, black, white))
@@ -155,6 +172,9 @@ if __name__ == "__main__":
 		
 		for i, key in enumerate(colors):
 			pg.draw.rect(screen, colors[key], rects[i])
-			screen.blit(texts[i], rects[i])
+			if rects[i].x >= screenSize[0] // 2:
+				screen.blit(texts[i], (rects[i][0] + screenSize[0] / 2 - texts[i].get_width(), rects[i][1]))
+			else:
+				screen.blit(texts[i], rects[i])
 
 		pg.display.update()
