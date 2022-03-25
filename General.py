@@ -172,6 +172,101 @@ class Vec2:
 	def __truediv__(self, vec):
 		return self.Divide(vec)
 
+	def __iadd__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x += vec.x
+			self.y += vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x += vec[0]
+			self.y += vec[1]
+		else:
+			self.x += vec
+			self.y += vec
+
+	def __isub__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x -= vec.x
+			self.y -= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x -= vec[0]
+			self.y -= vec[1]
+		else:
+			self.x -= vec
+			self.y -= vec
+
+	def __imul__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x *= vec.x
+			self.y *= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x *= vec[0]
+			self.y *= vec[1]
+		else:
+			self.x *= vec
+			self.y *= vec
+	
+	def __ifloordiv__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x //= vec.x
+			self.y //= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x //= vec[0]
+			self.y //= vec[1]
+		else:
+			self.x //= vec
+			self.y //= vec
+
+	def __itruediv__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x /= vec.x
+			self.y /= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x /= vec[0]
+			self.y /= vec[1]
+		else:
+			self.x /= vec
+			self.y /= vec
+
+	def __imod__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x %= vec.x
+			self.y %= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x %= vec[0]
+			self.y %= vec[1]
+		else:
+			self.x %= vec
+			self.y %= vec
+
+	def __ipow__(self, vec):
+		if isinstance(vec, Vec2):
+			self.x **= vec.x
+			self.y **= vec.y
+		elif isinstance(vec, (tuple, list)):
+			self.x **= vec[0]
+			self.y **= vec[1]
+		else:
+			self.x **= vec
+			self.y **= vec
+
+	def __pos__(self):
+		return Vec2(abs(self.x), abs(self.y))
+	
+	def __neg__(self):
+		return Vec2(-abs(self.x), -abs(self.y))
+
+	def __abs__(self):
+		return Vec2(abs(self.x), abs(self.y))
+
+	def __floor__(self):
+		return Vec2(floor(self.x), floor(self.y))
+
+	def __ceil__(self):
+		return Vec2(ceil(self.x), ceil(self.y))
+	
+	def __trunc__(self):
+		return Vec2(trunc(self.x), trunc(self.y))
+
 	def __eq__(self, vec):
 		if isinstance(vec, Vec2):
 			return self.x == vec.x and self.y == vec.y
@@ -224,6 +319,15 @@ class Vec2:
 			return self.y
 		else:
 			raise IndexError
+
+	def __int__(self):
+		return Vec2(int(self.x), int(self.y))
+
+	def __float__(self):
+		return Vec2(float(self.x), float(self.y))
+
+	def __complex__(self):
+		return Vec2(complex(self.x), complex(self.y))
 
 	@property
 	def mag(self):
