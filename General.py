@@ -181,7 +181,8 @@ class Vec2:
 			self.y += vec[1]
 		else:
 			self.x += vec
-			self.y += vec
+			self.y += vec 
+		return self
 
 	def __isub__(self, vec):
 		if isinstance(vec, Vec2):
@@ -193,6 +194,7 @@ class Vec2:
 		else:
 			self.x -= vec
 			self.y -= vec
+		return self
 
 	def __imul__(self, vec):
 		if isinstance(vec, Vec2):
@@ -204,6 +206,7 @@ class Vec2:
 		else:
 			self.x *= vec
 			self.y *= vec
+		return self
 	
 	def __ifloordiv__(self, vec):
 		if isinstance(vec, Vec2):
@@ -215,6 +218,7 @@ class Vec2:
 		else:
 			self.x //= vec
 			self.y //= vec
+		return self
 
 	def __itruediv__(self, vec):
 		if isinstance(vec, Vec2):
@@ -226,6 +230,7 @@ class Vec2:
 		else:
 			self.x /= vec
 			self.y /= vec
+		return self
 
 	def __imod__(self, vec):
 		if isinstance(vec, Vec2):
@@ -237,6 +242,7 @@ class Vec2:
 		else:
 			self.x %= vec
 			self.y %= vec
+		return self
 
 	def __ipow__(self, vec):
 		if isinstance(vec, Vec2):
@@ -248,6 +254,7 @@ class Vec2:
 		else:
 			self.x **= vec
 			self.y **= vec
+		return self
 
 	def __pos__(self):
 		return Vec2(abs(self.x), abs(self.y))
