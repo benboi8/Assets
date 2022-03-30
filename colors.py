@@ -1,41 +1,55 @@
 from random import *
-from General import Lerp, Constrain
+from General import Lerp, Constrain, Map
 
 
 class Color(tuple):
+	mode = (0, 255)
+	allColors = []
+
+	def ChangeMode(mode):
+		prevMode = Color.mode
+		Color.mode = mode
+		for color in Color.allColors:
+			color.Mode(prevMode)
+
 	def __init__(self, color):
 		super().__init__()
 
 		self.r = color[0]
 		self.g = color[1]
 		self.b = color[2]
-		self.a = 255
+		self.a = Color.mode[1]
 		if len(color) == 4:
 			self.a = color[3]
 
+		Color.allColors.append(self)
+
+	def Mode(self, prevMode):
+		self.r = Map(self.r, prevMode[0], prevMode[1], Color.mode[0], Color.mode[1])
+		self.g = Map(self.g, prevMode[0], prevMode[1], Color.mode[0], Color.mode[1])
+		self.b = Map(self.b, prevMode[0], prevMode[1], Color.mode[0], Color.mode[1])
+		self.a = Map(self.a, prevMode[0], prevMode[1], Color.mode[0], Color.mode[1])
+
 	def __add__(self, c):
-		return Color((Constrain(self.r + c.r, 0, 255), Constrain(self.g + c.g, 0, 255), Constrain(self.b + c.b, 0, 255)))
+		return Color((Constrain(self.r + c.r, Color.mode[0], Color.mode[1]), Constrain(self.g + c.g, Color.mode[0], Color.mode[1]), Constrain(self.b + c.b, Color.mode[0], Color.mode[1])))
 
 	def __sub__(self, c):
-		return Color((Constrain(self.r - c.r, 0, 255), Constrain(self.g - c.g, 0, 255), Constrain(self.b - c.b, 0, 255)))
+		return Color((Constrain(self.r - c.r, Color.mode[0], Color.mode[1]), Constrain(self.g - c.g, Color.mode[0], Color.mode[1]), Constrain(self.b - c.b, Color.mode[0], Color.mode[1])))
 	
 	def __mul__(self, c):
-		return Color((Constrain(self.r * c.r, 0, 255), Constrain(self.g * c.g, 0, 255), Constrain(self.b * c.b, 0, 255)))
+		return Color((Constrain(self.r * c.r, Color.mode[0], Color.mode[1]), Constrain(self.g * c.g, Color.mode[0], Color.mode[1]), Constrain(self.b * c.b, Color.mode[0], Color.mode[1])))
 	
-	def __mul__(self, c):
-		return Color((Constrain(self.r * c.r, 0, 255), Constrain(self.g * c.g, 0, 255), Constrain(self.b * c.b, 0, 255)))
-
 	def __floordiv__(self, c):
-		return Color((Constrain(self.r // c.r, 0, 255), Constrain(self.g // c.g, 0, 255), Constrain(self.b // c.b, 0, 255)))
+		return Color((Constrain(self.r // c.r, Color.mode[0], Color.mode[1]), Constrain(self.g // c.g, Color.mode[0], Color.mode[1]), Constrain(self.b // c.b, Color.mode[0], Color.mode[1])))
 	
 	def __truediv__(self, c):
-		return Color((Constrain(self.r / c.r, 0, 255), Constrain(self.g / c.g, 0, 255), Constrain(self.b / c.b, 0, 255)))
+		return Color((Constrain(self.r / c.r, Color.mode[0], Color.mode[1]), Constrain(self.g / c.g, Color.mode[0], Color.mode[1]), Constrain(self.b / c.b, Color.mode[0], Color.mode[1])))
 
 	def __mod__(self, c):
-		return Color((Constrain(self.r % c.r, 0, 255), Constrain(self.g % c.g, 0, 255), Constrain(self.b % c.b, 0, 255)))
+		return Color((Constrain(self.r % c.r, Color.mode[0], Color.mode[1]), Constrain(self.g % c.g, Color.mode[0], Color.mode[1]), Constrain(self.b % c.b, Color.mode[0], Color.mode[1])))
 		
-	def __mod__(self, c):
-		return Color((Constrain(self.r ** c.r, 0, 255), Constrain(self.g ** c.g, 0, 255), Constrain(self.b ** c.b, 0, 255)))
+	def __pow__(self, c):
+		return Color((Constrain(self.r ** c.r, Color.mode[0], Color.mode[1]), Constrain(self.g ** c.g, Color.mode[0], Color.mode[1]), Constrain(self.b ** c.b, Color.mode[0], Color.mode[1])))
 
 	def __eq__(self, c):
 		return self.r == c.r and self.g == c.g and self.b == c.b
@@ -60,7 +74,7 @@ class Color(tuple):
 
 	@property
 	def Invert(self):
-		return Color((255 - self.r, 255 - self.g, 255 - self.b, self.a))
+		return Color((Color.mode[1] - self.r, Color.mode[1] - self.g, Color.mode[1] - self.b, self.a))
 
 	def Lerp(self, c, t):
 		return (Lerp(self.r, c.r, t), Lerp(self.g, c.g, t), Lerp(self.b, c.b, t))
@@ -92,6 +106,7 @@ def InvertColor(color):
 
 def ChangeColorBrightness(color, percentage):
 	return Color((color[0] * Constrain(percentage / 100, 0, 1), color[1] * Constrain(percentage / 100, 0, 1), color[2] * Constrain(percentage / 100, 0, 1)))
+
 
 
 # pre-defined colors
@@ -126,7 +141,6 @@ peach = Color((255, 153, 102))
 bloodRed = Color((153, 25, 25))
 
 
-
 if __name__ == "__main__":
 	import pygame as pg
 	pg.init()
@@ -138,7 +152,6 @@ if __name__ == "__main__":
 		if isinstance(globals()[c], tuple):
 			colors[c] = (globals()[c])
 			colors[f"~{c}"] = ~(globals()[c])
-
 
 	size = 20
 

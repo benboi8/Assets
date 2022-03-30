@@ -86,9 +86,9 @@ def DrawVector(vector, colors, magnitude=None, directionPoint=centerOfScreen, ra
 	# d = vector.Direction(directionPoint)
 	# pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (d[0] * magnitude), vector.y + (d[1] * magnitude)))
 
-	# vector = vector.Normalize()
+	vector = vector.Normalize()
 	d = radians(vector.Direction())
-	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (10 * cos(d)), vector.y + (10 * sin(d))))
+	pg.draw.line(surface, colors[1], (vector.x, vector.y), (vector.x + (10 * cos(d)), vector.y + (10 * sin(d))), 10)
 
 
 def DrawRectOutline(color, rect, width=1, surface=screen):
@@ -1085,6 +1085,9 @@ class Slider(Label):
 		if self.onValueChange != None:
 			if callable(self.onValueChange):
 				self.result = self.onValueChange(self.value)
+
+			if isinstance(self.onValueChange, Sequence):
+				self.onValueChange.Start()
 
 		return self.value
 

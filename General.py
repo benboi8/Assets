@@ -47,7 +47,7 @@ class Func:
 		return self.func(*args, **self.kwargs)
 
 
-# used to chain multiple 'Func' together
+# change to make a list of functions execute 
 class Sequence:
 	defaultTimeStep = None
 
@@ -152,6 +152,26 @@ class Vec2:
 	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
 		return Vec2(randint(minX * 1000, maxX * 1000) / 1000, randint(minY * 1000, maxY * 1000) / 1000)
 
+	# do more tests
+	def GetAngle(p1, p2, inDegrees=False):
+		p1 = Vec2(p1[0], p1[1])
+		p2 = Vec2(p2[0], p2[1])
+		p3 = v1 + Vec2(10, 0)
+		
+		mult = 1
+		if p3[1] > p2[1]:
+			mult = -1
+
+		a = p1.GetEuclideanDistance(p2) ** 2 + p1.GetEuclideanDistance(p3) ** 2 - p2.GetEuclideanDistance(p3) ** 2
+		b = 2 * p1.GetEuclideanDistance(p2) * p1.GetEuclideanDistance(p3)
+
+		angle = acos(a / b) * mult
+
+		if inDegrees:
+			return degrees(angle)
+
+		return angle
+
 	def __init__(self, x, y, lists=[]):
 		self.x = x
 		self.y = y
@@ -173,87 +193,73 @@ class Vec2:
 		return self.Divide(vec)
 
 	def __iadd__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x += vec.x
-			self.y += vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x += vec[0]
-			self.y += vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x += vec
 			self.y += vec 
+		else:
+			self.x += vec[0]
+			self.y += vec[1]
+		
 		return self
 
 	def __isub__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x -= vec.x
-			self.y -= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x -= vec[0]
-			self.y -= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x -= vec
 			self.y -= vec
+		else:
+			self.x -= vec[0]
+			self.y -= vec[1]
+		
 		return self
 
 	def __imul__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x *= vec.x
-			self.y *= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x *= vec[0]
-			self.y *= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x *= vec
 			self.y *= vec
+		else:
+			self.x *= vec[0]
+			self.y *= vec[1]
+		
 		return self
 	
 	def __ifloordiv__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x //= vec.x
-			self.y //= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x //= vec[0]
-			self.y //= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x //= vec
 			self.y //= vec
+		else:
+			self.x //= vec[0]
+			self.y //= vec[1]
+
 		return self
 
 	def __itruediv__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x /= vec.x
-			self.y /= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x /= vec[0]
-			self.y /= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x /= vec
 			self.y /= vec
+		else:
+			self.x /= vec[0]
+			self.y /= vec[1]
+
 		return self
 
 	def __imod__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x %= vec.x
-			self.y %= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x %= vec[0]
-			self.y %= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x %= vec
 			self.y %= vec
+		else:
+			self.x %= vec[0]
+			self.y %= vec[1]
+		
 		return self
 
 	def __ipow__(self, vec):
-		if isinstance(vec, Vec2):
-			self.x **= vec.x
-			self.y **= vec.y
-		elif isinstance(vec, (tuple, list)):
-			self.x **= vec[0]
-			self.y **= vec[1]
-		else:
+		if isinstance(vec, (int, float)):
 			self.x **= vec
 			self.y **= vec
+		else:
+			self.x **= vec[0]
+			self.y **= vec[1]
+		
 		return self
 
 	def __pos__(self):
@@ -275,51 +281,33 @@ class Vec2:
 		return Vec2(trunc(self.x), trunc(self.y))
 
 	def __eq__(self, vec):
-		if isinstance(vec, Vec2):
-			return self.x == vec.x and self.y == vec.y
-		elif isinstance(vec, (tuple, list)):
-			return self.x == vec[0] and self.y == vec[1]
-		else:
-			return False
+		return self.x == vec[0] and self.y == vec[1]
 
 	def __ne__(self, vec):
-		if isinstance(vec, Vec2):
-			return self.x != vec.x or self.y != vec.y
-		elif isinstance(vec, (tuple, list)):
-			return self.x != vec[0] or self.y != vec[1]
-		else:
-			raise Exception(f"Argument must be two numbers")
+		return self.x != vec[0] or self.y != vec[1]
 
 	def __pow__(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x ** vec.x, self.y ** vec.y)
 		if isinstance(vec, (int, float)):
-			return Vec2(self.x ** vec, self.y ** vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x ** vec[0], self.y ** vec[1])
-		else:
-			raise Exception(f"Argument isn't a number")
+			return Vec2(self.x ** vec, self.y ** vec)			
+
+		return Vec2(self.x ** vec[0], self.y ** vec[1])
 
 	def __mod__(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x % vec.x, self.y % vec.y)
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x % vec, self.y % vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x % vec[0], self.y % vec[1])
-		else:
-			raise Exception(f"Argument isn't a number")
+
+		return Vec2(self.x % vec[0], self.y % vec[1])
 
 	def __dir__(self):
 		return {"x": self.x, "y": self.y, "magnitude": self.Magnitude(), "direction": self.Direction(), "type": type(self)}
 
 	def __str__(self):
-		return f"x:{self.x} y:{self.y} magnitude:{self.Magnitude()} direction:{self.Direction()} type:{type(self)}"
+		return f"x:{self.x} y:{self.y}"
 
 	def __round__(self, n=1):
 		return Vec2(round(self.x, n), round(self.y, n))
 
-	def __index__(self, i):
+	def __getitem__(self, i):
 		if i == 0:
 			return self.x
 		elif i == 1:
@@ -332,9 +320,6 @@ class Vec2:
 
 	def __float__(self):
 		return Vec2(float(self.x), float(self.y))
-
-	def __complex__(self):
-		return Vec2(complex(self.x), complex(self.y))
 
 	@property
 	def mag(self):
@@ -366,54 +351,34 @@ class Vec2:
 		return Vec2(self.x, self.y)
 
 	def Add(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x + vec.x, self.y + vec.y)
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x + vec, self.y + vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x + vec[0], self.y + vec[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+		
+		return Vec2(self.x + vec[0], self.y + vec[1])
 
 	def Sub(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x - vec.x, self.y - vec.y)
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x - vec, self.y - vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x - vec[0], self.y - vec[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+
+		return Vec2(self.x - vec[0], self.y - vec[1])
 
 	def Multiply(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x * vec.x, self.y * vec.y)
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x * vec, self.y * vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x * vec[0], self.y * vec[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+
+		return Vec2(self.x * vec[0], self.y * vec[1])
 
 	def Divide(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x / vec.x, self.y / vec.y)	
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x / vec, self.y / vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x / vec[0], self.y / vec[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+
+		return Vec2(self.x / vec[0], self.y / vec[1])
 
 	def IntDivide(self, vec):
-		if isinstance(vec, Vec2):
-			return Vec2(self.x // vec.x, self.y // vec.y)
 		if isinstance(vec, (int, float)):
 			return Vec2(self.x // vec, self.y // vec)
-		if isinstance(vec, (tuple, list)):
-			return Vec2(self.x // vec[0], self.y // vec[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+
+		return Vec2(self.x // vec[0], self.y // vec[1])
 
 	def Magnitude(self):
 		return sqrt(self.MagnitudeSquared())
@@ -422,10 +387,10 @@ class Vec2:
 		return (self.x ** 2) + (self.y ** 2)
 
 	def SetMagnitude(self, mag):
-		try:
-			return Vec2(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude())
-		except ZeroDivisionError:
-			return self.Copy()
+		# try:
+		return Vec2(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude())
+		# except ZeroDivisionError:
+			# return self.Copy()
 
 	def Limit(self, maxValue):
 		magSq = self.MagnitudeSquared()
@@ -438,7 +403,7 @@ class Vec2:
 
 	def Direction(self):
 		try:
-			d = degrees(GetAngle(Vec2.origin, (Vec2.origin[0] + 10, Vec2.origin[1]), (self.x, self.y)))
+			d = degrees(Vec2.GetAngle(Vec2.origin, self))
 			return d
 		except ZeroDivisionError:
 			return 0.0
@@ -447,56 +412,362 @@ class Vec2:
 		return self.x * vec.x + self.y * vec.y
 
 	def Cross(self, vec):
-		return Vec2(self.x * vec.x - self.y * vec.y)
+		return self.x * vec.x - self.y * vec.y
 
 	def GetEuclideanDistance(self, pos):
-		if isinstance(pos, Vec2):
-			return sqrt((self.x - pos.x) ** 2 + (self.y - pos.y) ** 2)
-		if isinstance(pos, (list, tuple)):
-			return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
-		else:
-			raise Exception("Argument must be two numbers.")
+		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2)
 
 	def GetTaxicabDistance(self, pos):
-		if isinstance(pos, Vec2):
-			return abs(self.x - pos.x) + abs(self.y - pos.y)
-		if isinstance(pos, (list, tuple)):
-			return abs(self.x - pos[0]) + abs(self.y - pos[1])
-		else:
-			raise Exception("Argument must be two numbers.")
+		return abs(self.x - pos[0]) + abs(self.y - pos[1])
+
+	def GetEDistance(self, pos):
+		return self.GetEuclideanDistance(pos)
+	
+	def GetTDistance(self, pos):
+		return self.GetTaxicabDistance(pos)
 
 	def Normalize(self):
 		try:
-			# return self.Multiply(Vec2(1 / self.Magnitude(), 1 / self.Magnitude()))
 			return Vec2(self.x / self.Magnitude(), self.y / self.Magnitude())
 		except ZeroDivisionError:
 			return Vec2(0, 0)
-
+	
+	# depreciated 
 	def RotateRadians(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
-			pointOfRot = (self.x, self.y)
-
-		if isinstance(pointOfRot, Vec2):
-			pointOfRot = (pointOfRot.x, pointOfRot.y)
+			pointOfRot = self.Copy()
 
 		angle += (225 * (pi / 180))
 		angle *= -1
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
+	# depreciated 
 	def RotateDegrees(self, angle, distanceToRotPoint=0, pointOfRot=None):
 		if pointOfRot == None:
-			pointOfRot = (self.x, self.y)
-
-		if isinstance(pointOfRot, Vec2):
-			pointOfRot = (pointOfRot.x, pointOfRot.y)
+			pointOfRot = self.Copy()
 
 		angle = radians(angle)
 		angle += (225 * (pi / 180))
 		angle *= -1
 		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
 
+	# preferred
+	def Rotate(self, angle, distanceToRotPoint=0, pointOfRot=None, inDegrees=False):
+		if pointOfRot == None:
+			pointOfRot = self.Copy()
 
-# add vec3
+		if inDegrees:
+			angle = radians(angle)
+			angle += (255 * (pi / 180))
+			angle *= -1
+		
+		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
+
+	# check
+	def Heading(self, inDegrees=False):
+		h = atan2(self.y, self.x)
+		if inDegrees:
+			return degrees(h)
+		else:
+			return h
+
+
+
+class Vec3:
+	# add <= >= < > magic methods using mag
+	# add rotation
+
+	origin = (0, 0, 0)
+
+	def Random(minX=1, maxX=1, minY=-1, maxY=1, minZ=-1, maxZ=1):
+		return Vec3(randint(minX * 1000, maxX * 1000) / 1000, randint(minY * 1000, maxY * 1000) / 1000, randint(minZ * 1000, maxZ * 1000) / 1000)
+
+	def GetAngle(p1, p2, inDegrees=False):
+		if inDegrees:
+			return degrees(acos((p1[0] * p2[0] + p1[1] * p2[1] + p1[2] * p2[2]) / (sqrt(p1[0] ** 2 + p1[1] ** 2 + p1[2] ** 2) * sqrt(p2[0] ** 2 + p2[1] ** 2 + p2[2] ** 2))))
+		return radians(acos((p1[0] * p2[0] + p1[1] * p2[1] + p1[2] * p2[2]) / (sqrt(p1[0] ** 2 + p1[1] ** 2 + p1[2] ** 2) * sqrt(p2[0] ** 2 + p2[1] ** 2 + p2[2] ** 2))))
+
+	def __init__(self, x, y, z, lists=[]):
+		self.x = x
+		self.y = y
+		self.z = z
+
+		AddToListOrDict(lists, self)
+
+	def __add__(self, vec):
+		return self.Add(vec)
+
+	def __iadd__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x += vec
+			self.y += vec
+			self.z += vec
+		else:
+			self.x += vec[0]
+			self.y += vec[1]
+			self.z += vec[2]
+
+		return self
+
+	def __sub__(self, vec):
+		return self.Sub(vec)
+
+	def __isub__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x -= vec
+			self.y -= vec
+			self.z -= vec
+		else:
+			self.x -= vec[0]
+			self.y -= vec[1]
+			self.z -= vec[2]
+
+		return self
+
+	def __mul__(self, vec):
+		return self.Multiply(vec)
+
+	def __imul__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x *= vec
+			self.y *= vec
+			self.z *= vec
+		else:
+			self.x *= vec[0]
+			self.y *= vec[1]
+			self.z *= vec[2]
+
+		return self
+
+	def __floordiv__(self, vec):
+		return self.IntDivide(vec)
+
+	def __ifloordiv__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x //= vec
+			self.y //= vec
+			self.z //= vec
+		else:
+			self.x //= vec[0]
+			self.y //= vec[1]
+			self.z //= vec[2]
+
+		return self
+
+	def __truediv__(self, vec):
+		return self.Divide(vec)
+
+	def __itruediv__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x /= vec
+			self.y /= vec
+			self.z /= vec
+		else:
+			self.x /= vec[0]
+			self.y /= vec[1]
+			self.z /= vec[2]
+
+		return self
+
+	def __mod__(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x % vec, self.y % vec, self.z % vec)
+
+		return Vec3(self.x % vec[0], self.y % vec[1], self.z % vec[2])
+
+	def __imod__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x %= vec
+			self.y %= vec
+			self.z %= vec
+		else:
+			self.x %= vec[0]
+			self.y %= vec[1]
+			self.z %= vec[2]
+
+		return self
+
+	def __pow__(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x ** vec, self.y ** vec, self.z ** vec)
+
+		return Vec3(self.x ** vec[0], self.y ** vec[1], self.z ** vec[2])
+
+	def __ipow__(self, vec):
+		if isinstance(vec, (int, float)):
+			self.x **= vec
+			self.y **= vec
+			self.z **= vec
+		else:
+			self.x **= vec[0]
+			self.y **= vec[1]
+			self.z **= vec[2]
+
+		return self
+
+	def __pos__(self):
+		return Vec3(+self.x, +self.y, +self.z)
+
+	def __neg__(self):
+		return Vec3(-self.x, -self.y, -self.z)
+
+	def __abs__(self):
+		return Vec3(abs(self.x), abs(self.y), abs(self.z))
+
+	def __floor__(self):
+		return Vec3(floor(self.x), floor(self.y), floor(self.z))
+
+	def __ceil__(self):
+		return Vec3(ceil(self.x), ceil(self.y), ceil(self.z))
+
+	def __trunc__(self):
+		return Vec3(trunc(self.x), trunc(self.y), trunc(self.z))
+
+	def __eq__(self, vec):
+		return self.x == vec[0] and self.y == vec[1] and self.z == vec[2]
+
+	def __ne__(self, vec):
+		return self.x != vec[0] or self.y != vec[1] or self.z != vec[2]
+
+	def __dir__(self):
+		return {"x": self.x, "y": self.y, "z": self.z, "magnitude": self.Magnitude(), "direction": self.Direction(), "type": type(self)}
+
+	def __str__(self):
+		return f"x:{self.x} y:{self.y} z:{self.z}"
+
+	def __round__(self, n=1):
+		return Vec3(round(self.x, n), round(self.y, n), round(self.z, n))
+
+	def __getitem__(self, i):
+		if i == 0:
+			return self.x
+		elif i == 1:
+			return self.y
+		elif i == 2:
+			return self.z
+		else:
+			raise IndexError
+
+	def __int__(self):
+		return Vec3(int(self.x), int(self.y), int(self.z))
+
+	def __float__(self):
+		return Vec3(float(self.x), float(self.y), float(self.z))
+
+	@property
+	def mag(self):
+		return self.Magnitude()
+
+	@property
+	def magSq(self):
+		return self.MagnitudeSquared()
+
+	@property
+	def dir(self):
+		return self.Direction()
+
+	@property
+	def direction(self):
+		return self.dir
+
+	def Set(self, x, y, z):
+		self.x = x
+		self.y = y
+		self.z = z
+
+	def SetX(self, x):
+		self.x = x
+
+	def SetY(self, y):
+		self.y = y
+
+	def SetZ(self, z):
+		self.z = z
+
+	def Copy(self):
+		return Vec3(self.x, self.y, self.z)
+
+	def Add(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x + vec, self.y + vec, self.z + vec)
+
+		return Vec3(self.x + vec[0], self.y + vec[1], self.z + vec[2])
+
+	def Sub(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x - vec, self.y - vec, self.z - vec)
+
+		return Vec3(self.x - vec[0], self.y - vec[1], self.z - vec[2])
+
+	def Multiply(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x * vec, self.y * vec, self.z * vec)
+
+		return Vec3(self.x * vec[0], self.y * vec[1], self.z * vec[2])
+
+	def Divide(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x / vec, self.y / vec, self.z / vec)
+
+		return Vec3(self.x / vec[0], self.y / vec[1], self.z / vec[2])
+
+	def IntDivide(self, vec):
+		if isinstance(vec, (int, float)):
+			return Vec3(self.x // vec, self.y // vec, self.z // vec)
+
+		return Vec3(self.x // vec[0], self.y // vec[1], self.z // vec[2])
+
+	def Magnitude(self):
+		return sqrt(self.MagnitudeSquared())
+
+	def MagnitudeSquared(self):
+		return (self.x ** 2) + (self.y ** 2) + (self.z ** 2)
+
+	def SetMagnitude(self):
+		try:
+			return Vec3(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude(), self.z * mag / self.Magnitude())
+		except:
+			return self.Copy()
+
+	def Limit(self, maxValue):
+		magSq = self.MagnitudeSquared()
+		if magSq > maxValue ** 2:
+			return self.Divide((sqrt(magSq), sqrt(magSq), sqrt(magSq))).Multiply((maxValue, maxValue, maxValue))
+		return self.Copy()
+
+	def DirectionToPoint(self, pointOfDirection):
+		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])), (pointOfDirection[2] - self.z) / max(0.00001, abs(pointOfDirection[2])))
+
+	def Direction(self):
+		try:
+			d = Vec3.GetAngle(Vec3.origin, self, inDegrees=True)
+			return d
+		except ZeroDivisionError:
+			return 0.0
+
+	def Dot(self, vec):
+		return self.x * vec[0] + self.y * vec[1] + self.z * vec[2]
+
+	def Cross(self, vec):
+		return self.x * vec[0] - self.y * vec[1] - self.z * vec[2]
+
+	def GetEuclideanDistance(self, pos):
+		return sqrt((self.x - pos[0]) ** 2 + (self.y - pos[1]) ** 2 + (self.z - pos[2]) ** 2)
+
+	def GetTaxicabDistance(self, pos):
+		return abs(self.x - pos[0]) + abs(self.y - pos[1]) + abs(self.z - pos[2])
+
+	def Normalize(self):
+		try:
+			return Vec3(self.x / self.Magnitude(), self.y / self.Magnitude(), self.z / self.Magnitude())
+		except ZeroDivisionError:
+			return self.Copy()
+
+	# https://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
+	# add axis 
+	def Rotate(self, angle, distanceToRotPoint=0, pointOfRot=None, inDegrees=False):
+		pass
+
 
 
 # used to time how long a function takes to run
