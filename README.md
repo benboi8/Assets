@@ -1,12 +1,12 @@
-General:
+# General:
 
-- Wait:
+# Wait:
 	Used with Sequences to add a delay to a function call
 
 	self.duration = duration
   
 
-- Func:
+# Func:
 	Used as a container for function calls, can have any number of arguments.
 
 	self.func = function_name
@@ -26,7 +26,7 @@ General:
 	Out: Hello World
 
 
-- Sequence:
+# Sequence:
 	Used to chain multiple functions together into a single process.
 
 	Sequence.defaultTimeStep = None
@@ -62,7 +62,7 @@ General:
 		   Delayed
 
 
-- Vec2
+# Vec2:
 	A 2D vector, which can be used like a list of two numbers
 
 	Vec2.origin = (0, 0)
@@ -93,7 +93,7 @@ General:
 	dot product
 	cross product
 	
-  incremental addition
+  	incremental addition
 	incremental subtraction
 	incremental multiplication
 	incremental floor division
@@ -134,7 +134,7 @@ General:
 	Out: x:-0.16299078079570548 y:0.9866275920404853
 
 
-- Vec3
+# Vec3:
 	Same as Vec2 but with x, y, z
 
 	- no rotation methods yet
@@ -165,24 +165,25 @@ General:
 	Out: Start time: 2022-04-18 11:34:54.631094, end time: 2022-04-18 11:34:54.794667, total difference: 47.77269999999999, number of iterations: 100 average:  0.47772699999999996
 
 
-- Lerp(v0, v1, t) # Linear interpolation between two numbers, v0, v1, t is a number to represent time, 0 is equal to v0 and 1 is equal to v1
+# Lerp(v0, v1, t):
+	Linear interpolation between two numbers, v0, v1, t is a number to represent time, 0 is equal to v0 and 1 is equal to v1
 	In : print(Lerp(0, 15, 0.5))
 	Out: 7.5
 
 
-- AddToListOrDict(lists, obj, key=None):
+# AddToListOrDict(lists, obj, key=None):
 	lists is a list of references to lists or dicts
 	obj is the thing being added to each list or dict in lists
 	key is the key used for a dict if it is none then it will attempt to used a name value if the obj doesn't have a name it will use to type
 
 
-- NowFormatted(timeFormat="%d/%m/%y %H:%M:%S")
+# NowFormatted(timeFormat="%d/%m/%y %H:%M:%S"):
 	returns the current time with the format of timeFormat
 	In : print(NowFormatted())
 	Out: 18/04/22 11:41:47
 
 
-- Constrain(v, mini, maxi):
+# Constrain(v, mini, maxi):
 	constrain v to a value between mini and maxi
 	equivalent to writing 'max(mini, min(maxi, v))'
 
@@ -190,7 +191,7 @@ General:
 	Out: 1
 
 
-- Map(value, start1, stop1, start2, stop2)
+# Map(value, start1, stop1, start2, stop2):
 	maps one range of values to another range of values
 
 	In : n = 0.5
