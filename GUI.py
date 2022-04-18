@@ -6,8 +6,37 @@
 
 # from GUI import *
 
+
+
+# def DrawLoop():
+# 	screen.fill(darkGray)
+
+# 	DrawAllGUIObjects()
+
+# 	pg.display.update()
+
+# def HandleEvents(event):
+# 	HandleGui(event)
+
+
+# while RUNNING:
+# 	clock.tick_busy_loop(FPS)
+# 	deltaTime = clock.get_time()
+# 	for event in pg.event.get():
+# 		if event.type == pg.QUIT:
+# 			RUNNING = False
+# 		if event.type == pg.KEYDOWN:
+# 			if event.key == pg.K_ESCAPE:
+# 				RUNNING = False
+
+# 		HandleEvents(event)
+
+# 	DrawLoop()
+
+
 from General import *
 from colors import *
+from colors import Color
 
 import pygame as pg
 from pygame import *
@@ -18,9 +47,9 @@ import webbrowser
 pg.init()
 clock = pg.time.Clock()
 
-running = True
+RUNNING = True
 
-fps = 60
+FPS = 60
 
 points = {}
 lines = {}
@@ -323,7 +352,10 @@ class Point(Vec2):
 		AddToListOrDict(lists, self)
 
 	def Draw(self):
-		pg.draw.circle(self.surface, self.color, (self.x, self.y), self.radius)
+		if self.radius != 0:
+			pg.draw.circle(self.surface, self.color, (self.x, self.y), self.radius)
+		else:
+			pg.gfxdraw.pixel(self.surface, int(self.x), int(self.y), self.color)
 
 
 class Line:
@@ -518,7 +550,7 @@ class Label(Box):
 	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, lists=[allLabels]):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
-		self.text = text
+		self.text = str(text)
 		self.fontSize = textData.get("fontSize", fontSize)
 		self.fontName = textData.get("fontName", fontName)
 		self.fontColor = textData.get("fontColor", white)
@@ -1074,7 +1106,7 @@ class Slider(Label):
 			else:
 				self.sliderButton.rect.y = max(min(rect.y, self.rect.y + self.rect.h - self.borderWidth * 2 - self.sliderButton.rect.h), self.rect.y + self.borderWidth)
 
-		self.GetValue()
+			self.GetValue()
 
 	def GetValue(self, n=3):
 		if not self.isVertical:
@@ -1773,15 +1805,15 @@ if __name__ == "__main__":
 	CreateTests()
 
 
-	while running:
-		clock.tick_busy_loop(fps)
+	while RUNNING:
+		clock.tick_busy_loop(FPS)
 		deltaTime = clock.get_time()
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
-				running = False
+				RUNNING = False
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
-					running = False
+					RUNNING = False
 
 			HandleEvents(event)
 

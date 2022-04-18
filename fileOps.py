@@ -11,10 +11,8 @@ def CheckFolderExists(folderName):
 	return os.path.exists(folderName)
 
 
-def CheckFileExists(fileName, folder="/"):
-	if CheckFolderExists(folder):
-		return os.path.isfile(folder + fileName)
-	return False
+def CheckFileExists(fileName):
+	return os.path.isfile(fileName)
 
 
 def CreateFolder(folderName):

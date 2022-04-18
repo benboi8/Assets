@@ -11,6 +11,7 @@ from random import *
 import math
 import random
 import datetime as dt
+import time as t
 from itertools import *
 import fileOps
 from fileOps import *
@@ -28,14 +29,14 @@ class Wait:
 
 # creates an instance of a function that can be used in a sequence or as an argument in another function e.g. a button being clicked
 class Func:
-	def __init__(self, functionName, *args, **kwargs):
+	def __init__(self, functionName, delay=0, *args, **kwargs):
 		self.func = functionName
 		self.args = args
 		self.kwargs = kwargs
 		self.finished = False
 
 		# used with sequences
-		self.delay = 0
+		self.delay = delay
 
 	def __call__(self, *args, **kwargs):
 		self.finished = True
@@ -62,11 +63,16 @@ class Sequence:
 		self.loop = False
 		self.autoDestroy = True
 
+		self.loopCount = 0
+
 		for key, value in kwargs.items():
 			setattr(self, key, value)
 
 		self.Generate()
 		sequences.append(self)
+
+	def __str__(self):
+		return f"duration:{self.duration}, started:{self.started}, paused:{self.paused}, looping:{self.loop}, autoDestroy:{self.autoDestroy}, timeStep:{self.timeStep}, t:{self.t}"
 
 	def Generate(self):
 		self.funcs = []
@@ -97,6 +103,7 @@ class Sequence:
 		for f in self.funcs:
 			f.finished = False
 
+		self.loopCount = 0
 		self.t = 0
 		self.paused = False
 		self.Update()
@@ -110,6 +117,7 @@ class Sequence:
 	def Stop(self):
 		self.t = self.duration
 		self.paused = False
+		self.loopCount = 0
 
 		self.Kill()
 
@@ -136,6 +144,7 @@ class Sequence:
 
 		if self.t >= self.duration:
 			if self.loop:
+				self.loopCount += 1
 				for f in self.funcs:
 					f.finished = False
 
@@ -156,7 +165,7 @@ class Vec2:
 	def GetAngle(p1, p2, inDegrees=False):
 		p1 = Vec2(p1[0], p1[1])
 		p2 = Vec2(p2[0], p2[1])
-		p3 = v1 + Vec2(10, 0)
+		p3 = p1 + Vec2(10, 0)
 		
 		mult = 1
 		if p3[1] > p2[1]:
@@ -281,6 +290,9 @@ class Vec2:
 		return Vec2(trunc(self.x), trunc(self.y))
 
 	def __eq__(self, vec):
+		if vec == None:
+			return False
+
 		return self.x == vec[0] and self.y == vec[1]
 
 	def __ne__(self, vec):
@@ -388,9 +400,12 @@ class Vec2:
 
 	def SetMagnitude(self, mag):
 		# try:
-		return Vec2(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude())
+		return Vec2(self.x * (mag / self.Magnitude()), self.y * (mag / self.Magnitude()))
 		# except ZeroDivisionError:
 			# return self.Copy()
+
+	def SetMag(self, mag):
+		return self.SetMagnitude(mag)
 
 	def Limit(self, maxValue):
 		magSq = self.MagnitudeSquared()
@@ -455,6 +470,9 @@ class Vec2:
 	def Rotate(self, angle, distanceToRotPoint=0, pointOfRot=None, inDegrees=False):
 		if pointOfRot == None:
 			pointOfRot = self.Copy()
+		else:
+			if distanceToRotPoint == 0:
+				distanceToRotPoint = self.GetEuclideanDistance(pointOfRot)
 
 		if inDegrees:
 			angle = radians(angle)
@@ -470,6 +488,9 @@ class Vec2:
 			return degrees(h)
 		else:
 			return h
+
+	def FromAngle(self, angle):
+		return Vec2(cos(angle), sin(angle))
 
 
 

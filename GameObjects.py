@@ -301,8 +301,8 @@ class ParticleSystem:
 			for key, value in kwargs.items():
 				setattr(self, key, value)
 
-			self.fpsLbl = Label((0, 0, 100, 50), (lightBlack, darkWhite), str(fps), textData={"fontSize": 12, "alignText": "left-top", "fontColor": white}, drawData={"drawBackground": False, "drawBorder": False}, lists=[])
-			self.numOfParticlesLbl = Label((30, 0, 100, 50), (lightBlack, darkWhite), str(fps), textData={"fontSize": 12, "alignText": "left-top", "fontColor": white}, drawData={"drawBackground": False, "drawBorder": False}, lists=[])
+			self.fpsLbl = Label((0, 0, 100, 50), (lightBlack, darkWhite), str(FPS), textData={"fontSize": 12, "alignText": "left-top", "fontColor": white}, drawData={"drawBackground": False, "drawBorder": False}, lists=[])
+			self.numOfParticlesLbl = Label((30, 0, 100, 50), (lightBlack, darkWhite), str(FPS), textData={"fontSize": 12, "alignText": "left-top", "fontColor": white}, drawData={"drawBackground": False, "drawBorder": False}, lists=[])
 		
 		def Draw(self):
 			if self.shouldDraw:
@@ -372,15 +372,15 @@ if __name__ == "__main__":
 			emitter.Update()
 
 
-	while running:
-		clock.tick_busy_loop(fps)
+	while RUNNING:
+		clock.tick_busy_loop(FPS)
 		deltaTime = clock.get_time()
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
-				running = False
+				RUNNING = False
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
-					running = False
+					RUNNING = False
 
 			HandleEvents(event)
 

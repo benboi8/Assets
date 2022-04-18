@@ -12,6 +12,47 @@ class Color(tuple):
 		for color in Color.allColors:
 			color.Mode(prevMode)
 
+	def HSVToRGB(hue, sat, value):
+		# chroma
+		C = value * sat
+
+		# H prime
+		Hp = hue / 60
+
+		X = C * (1 - abs((Hp  % 2) - 1))
+
+		if 0 <= Hp < 1:
+			r, g, b = C, X, 0
+
+		if 1 <= Hp < 2:
+			r, g, b = X, C, 0
+
+		if 2 <= Hp < 3:
+			r, g, b = 0, C, X
+
+		if 3 <= Hp < 4:
+			r, g, b = 0, X, C
+
+		if 4 <= Hp < 5:
+			r, g, b = X, 0, C
+
+		if 5 <= Hp < 6:
+			r, g, b = C, 0, X
+
+		m = value - C
+
+		return Color((int(r + m), int(g + m), int(b + m)))
+
+	def RGBToHex(color):
+		return f"#{hex(color[0])[2:].zfill(2)}{hex(color[1])[2:].zfill(2)}{hex(color[2])[2:].zfill(2)}"
+
+	def HexToRGB(hexString):
+		hexString = hexString.strip("#").strip(" ")
+		if len(hexString) == 6:
+			return Color((int(hexString[0:2], 16), int(hexString[2:4], 16), int(hexString[4:6], 16)))
+		else:
+			raise ValueError("Hex string not 6 characters")
+
 	def __init__(self, color):
 		super().__init__()
 
@@ -81,7 +122,7 @@ class Color(tuple):
 
 	@property
 	def AsHex(self):
-		return f"#{hex(self.r)[2:].zfill(2)}{hex(self.g)[2:].zfill(2)}{hex(self.b)[2:].zfill(2)}"
+		return Color.RGBToHex(self)
 	
 	@property
 	def hex(self):
@@ -106,7 +147,6 @@ def InvertColor(color):
 
 def ChangeColorBrightness(color, percentage):
 	return Color((color[0] * Constrain(percentage / 100, 0, 1), color[1] * Constrain(percentage / 100, 0, 1), color[2] * Constrain(percentage / 100, 0, 1)))
-
 
 
 # pre-defined colors
