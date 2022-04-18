@@ -118,7 +118,7 @@ class Color(tuple):
 		return Color((Color.mode[1] - self.r, Color.mode[1] - self.g, Color.mode[1] - self.b, self.a))
 
 	def Lerp(self, c, t):
-		return (Lerp(self.r, c.r, t), Lerp(self.g, c.g, t), Lerp(self.b, c.b, t))
+		return (Lerp(self.r, c[0], t), Lerp(self.g, c[1], t), Lerp(self.b, c[2], t))
 
 	@property
 	def AsHex(self):

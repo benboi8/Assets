@@ -23,10 +23,10 @@ def CreateFolder(folderName):
 	return False
 
 
-def CreateFile(fileName, folder="/"):
-	if not CheckFileExists(folder, fileName):
-		print(f"Created File at {folder + fileName}")
-		with open(folder + fileName, "w") as file:
+def CreateFile(fileName):
+	if not CheckFileExists(fileName):
+		print(f"Created File at {fileName}")
+		with open(fileName, "w") as file:
 			file.close()
 			return True
 	return False
@@ -87,19 +87,15 @@ def SplitFileFromFolderPath(path):
 	return "\\".join(paths[:-1]) + "\\", paths[-1].split(".")[0], paths[-1].split(".")[1]
 
 
-def GetPath(folder, fileName, fileType):
-	if fileType == "":
-		if "." in fileName:
-			fileType = "." + fileName.split(".")[1]
-			fileName = fileName.split(".")[0]
-		else:
-			print(f"{folder}{fileName} has no file type. Specify a file type in the name or with the fileType variable.")
-			return False
-
-	if folder == "":
-		folder = os.getcwd()
+def GetPath(fileName):
+	if "." in fileName:
+		fileType = "." + fileName.split(".")[1]
+		fileName = fileName.split(".")[0]
 	else:
-		folder = os.getcwd() + folder
+		print(f"{fileName} has no file type. Specify a file type in the name or with the fileType variable.")
+		return False
+
+	folder = os.getcwd()
 
 	folder = folder.replace("/", "\\")
 	fileName = fileName.strip("/\\")
@@ -111,8 +107,8 @@ def GetPath(folder, fileName, fileType):
 	return f"{folder}{fileName}{fileType}", folder, fileName, fileType
 
 
-def SaveData(fileName, data, folder="/", fileType="", fileIOType="w", createNewFolderOrFile=True):
-	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
+def SaveData(fileName, data, fileIOType="w", createNewFolderOrFile=True):
+	path, folder, fileName, fileType = GetPath(fileName)
 
 	if not CheckFolderExists(folder):
 		if createNewFolderOrFile:
@@ -201,8 +197,8 @@ def SaveData(fileName, data, folder="/", fileType="", fileIOType="w", createNewF
 	return True
 
 
-def OpenFile(fileName, folder="", fileType=""):
-	path, folder, fileName, fileType = GetPath(folder, fileName, fileType)
+def OpenFile(fileName):
+	path, folder, fileName, fileType = GetPath(fileName)
 
 	if not CheckFolderExists(folder):
 		print(f"Failed to load. No folder with name '{folder}'.")

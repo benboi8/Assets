@@ -29,14 +29,14 @@ class Wait:
 
 # creates an instance of a function that can be used in a sequence or as an argument in another function e.g. a button being clicked
 class Func:
-	def __init__(self, functionName, delay=0, *args, **kwargs):
+	def __init__(self, functionName, *args, **kwargs):
 		self.func = functionName
 		self.args = args
 		self.kwargs = kwargs
 		self.finished = False
 
 		# used with sequences
-		self.delay = delay
+		self.delay = 0
 
 	def __call__(self, *args, **kwargs):
 		self.finished = True
@@ -48,7 +48,6 @@ class Func:
 		return self.func(*args, **self.kwargs)
 
 
-# change to make a list of functions execute 
 class Sequence:
 	defaultTimeStep = None
 
@@ -97,6 +96,9 @@ class Sequence:
 		elif isinstance(arg, Func):
 			arg.delay = self.duration
 			self.funcs.append(arg)
+
+	def __call__(self):
+		self.Start()
 
 	def Start(self):
 		self.started = True
@@ -161,7 +163,6 @@ class Vec2:
 	def Random(minX=-1, maxX=1, minY=-1, maxY=1):
 		return Vec2(randint(minX * 1000, maxX * 1000) / 1000, randint(minY * 1000, maxY * 1000) / 1000)
 
-	# do more tests
 	def GetAngle(p1, p2, inDegrees=False):
 		p1 = Vec2(p1[0], p1[1])
 		p2 = Vec2(p2[0], p2[1])
@@ -180,6 +181,12 @@ class Vec2:
 			return degrees(angle)
 
 		return angle
+
+	def FromAngle(angle, inDegrees=False):
+		if not inDegrees:
+			return Vec2(cos(angle), sin(angle))
+		else:
+			return Vec2(cos(radians(angle)), sin(radians(angle)))
 
 	def __init__(self, x, y, lists=[]):
 		self.x = x
@@ -489,15 +496,8 @@ class Vec2:
 		else:
 			return h
 
-	def FromAngle(self, angle):
-		return Vec2(cos(angle), sin(angle))
-
-
 
 class Vec3:
-	# add <= >= < > magic methods using mag
-	# add rotation
-
 	origin = (0, 0, 0)
 
 	def Random(minX=1, maxX=1, minY=-1, maxY=1, minZ=-1, maxZ=1):
@@ -898,28 +898,6 @@ class Timer:
 		return (startTime, endTime, average)
 
 
-# 2d array of numbers
-class NumGrid:
-	def __init__(self, gridSize, gridFunc=None, lists=[numGrids]):
-		self.gridSize = gridSize
-		self.gridFunc = gridFunc
-		self.CreateGrid()
-
-		AddToListOrDict(lists, self)
-
-	def CreateGrid(self):
-		if callable(self.gridFunc):
-			self.grid = [[self.gridFunc(x, y, self.gridSize[0], self.gridSize[1]) for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]
-		else:
-			self.grid = [[0 for x in range(self.gridSize[0])] for y in range(self.gridSize[1])]
-
-	def PrintGrid(self, name="Unknown", printWholeGrid=False):
-		print(f"Grid name: {name}, length: {len(self.grid[0])}, height: {len(self.grid)}")
-		if printWholeGrid:
-			for row in self.grid:
-				print(row)
-
-
 def Lerp(v0, v1, t):
 	return v0 + t * (v1 - v0)
 
@@ -949,6 +927,7 @@ def AddToListOrDict(lists, obj, key=None):
 def NowFormatted(timeFormat="%d/%m/%y %H:%M:%S"):
 	return dt.datetime.now().strftime(timeFormat)
 
+
 # return angle between 3 points
 def GetAngle(p1, p2, p3):
 	if isinstance(p1, (tuple, list)):
@@ -975,6 +954,7 @@ def GetAngle(p1, p2, p3):
 def Constrain(v, mini, maxi):
 	return max(mini, min(maxi, v))
 
+
 # different to python 'map'
 def Map(value, start1, stop1, start2, stop2, withinBounds=True):
 	newVal = (value - start1) / (stop1 - start1) * (stop2 - start2) + start2
@@ -989,4 +969,5 @@ def Map(value, start1, stop1, start2, stop2, withinBounds=True):
 
 
 if __name__ == "__main__":
-	pass
+	n = 0.31
+	print(Map(n, 0, 1, 5, 20))

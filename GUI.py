@@ -55,21 +55,21 @@ points = {}
 lines = {}
 polygons = {}
 
-allBoxs = {}
-allLabels = {}
-allTextBoxs = {}
-allButtons = {}
-allSliders = {}
-allScrollBars = {}
-allMessageBoxs = {}
-allHyperLinks = {}
-allSwitches = {}
-allMultiselectButtons = {}
-allProgressBars = {}
-allRadioButtons = {}
+allBoxs = []
+allLabels = []
+allTextBoxs = []
+allButtons = []
+allSliders = []
+allScrollBars = []
+allMessageBoxs = []
+allHyperLinks = []
+allSwitches = []
+allMultiselectButtons = []
+allProgressBars = []
+allRadioButtons = []
 
-allCollections = {}
-allExpandableMenus = {}
+allCollections = []
+allExpandableMenus = []
 
 
 def ChangeFontName(name):
@@ -321,24 +321,23 @@ def CircleLineSegmentIntersection(circle_center, circle_radius, pt1, pt2, full_l
 			return intersections
 
 
-class RayCast:
-	def Cast(p1, p2, walls):
-		for wall in walls:
-			x1, y1 = p1
-			x2, y2 = p2
+def RayCast(p1, p2, walls):
+	for wall in walls:
+		x1, y1 = p1
+		x2, y2 = p2
 
-			x3, y3 = wall[0]
-			x4, y4 = wall[1]
+		x3, y3 = wall[0]
+		x4, y4 = wall[1]
 
-			den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-			if den != 0:
-				t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
-				if 0 <= t <= 1:
-					l1 = ((x1 + t * (x2 - x1)), (y1 + t * (y2 - y1)))
-					if l1 > (x3, y3) and l1 < (x4, y4):
-						ray = Vec2(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
-						return ray
-		return None
+		den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+		if den != 0:
+			t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+			if 0 <= t <= 1:
+				l1 = ((x1 + t * (x2 - x1)), (y1 + t * (y2 - y1)))
+				if l1 > (x3, y3) and l1 < (x4, y4):
+					ray = Vec2(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+					return ray
+	return None
 
 
 class Point(Vec2):
@@ -933,12 +932,13 @@ class TextInputBox(Label):
 
 
 class Button(Label):
-	def __init__(self, rect, colors, onClick=None, onClickArgs=[], text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons]):
+	def __init__(self, rect, colors, onClick=None, onClickArgs=[], text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons], onRelease=None, onReleaseArgs=[]):
 		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
 
 		self.onClick = onClick
 		self.onClickArgs = onClickArgs
-		# add on release 
+		self.onRelease = onRelease 
+		self.onReleaseArgs = onReleaseArgs 
 		
 		self.disabled = False
 		self.active = inputData.get("active", False)
@@ -1029,6 +1029,15 @@ class Button(Label):
 		self.borderColor = self.activeColor
 
 	def Release(self):
+		if self.disabled:
+			return
+
+		if self.active:
+			if callable(self.onRelease):
+				self.result = self.onRelease(*self.onReleaseArgs)
+			elif isinstance(self.onRelease, Sequence):
+				self.onClick.Start()
+
 		self.active = False
 		self.borderColor = self.inactiveColor
 
@@ -1392,42 +1401,6 @@ class MultiselectButton(Label):
 			self.activeSelection = self.options[index]
 
 
-# add custom button
-# add better way to add buttons
-class RadioButton(Label):
-	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, buttons=[], lists=[allRadioButtons]):
-		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
-
-		self.buttons = buttons
-
-	def AddButton(self, button):
-		if type(button) == Button:
-			self.buttons.append(button)
-		elif type(button) == dict:
-			rect = button.get("rect")
-			colors = button.get("colors")
-			onClick = button.get("onClick", None)
-			onClickArgs = button.get("onClickArgs", [])
-			text = button.get("text", "")
-			name = button.get("name", "")
-			drawData = button.get("drawData", {})
-			textData = button.get("textData", {})
-			inputData = button.get("inputData", {})
-
-			self.buttons.append(Button(rect, colors, onClick, onClickArgs, text, name, drawData, textData, inputData))			
-
-	def Draw(self):
-		self.DrawBackground()
-		self.DrawBorder()
-		self.DrawText()
-
-		for button in self.buttons:
-			button.Draw()
-
-	def HandleEvent(self, event):
-		for button in self.buttons:
-			button.HandleEvent(event)
-
 
 # dropdown menu
 
@@ -1437,15 +1410,21 @@ class RadioButton(Label):
 
 
 class Collection:
-	def __init__(self, objects=[], name="", addToList=True):
+	def __init__(self, objects=[], name="", lists=[]):
 		self.objects = objects
 		self.name = name
 
-		if addToList:
-			AddToListOrDict(allCollections, self, self.name if self.name != "" else f"collection-{len(self.objects)}")
+		AddToListOrDict(lists, self)
 
 	def Add(self, obj):
 		self.objects.append(obj)
+
+	def append(self, obj):
+		self.Add(obj)
+
+	def remove(self, obj):
+		if obj in self.objects:
+			self.objects.remove(obj)
 
 	def Draw(self):
 		for obj in self.objects:
@@ -1748,7 +1727,7 @@ if __name__ == "__main__":
 	def CreateTests():
 		Box((50, 50, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}})
 		Label((50, 160, 100, 100), (lightBlack, white), drawData={"roundedCorners": True, "roundness": 3, "activeCorners": {"topLeft": False}}, text="This is\nsome\ntext", textData={"alignText": "center-top", "fontName": "comic-sans", "fontSize": 20, "fontColor": white})
-		Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=[1, 2, 3, 4, 5])
+		Button((50, 270, 100, 100), (lightBlack, white, lightRed), onClick=print, onClickArgs=["Pressed"], onRelease=print, onReleaseArgs=["Released"])
 		TextInputBox((50, 450, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": "HEADER"})
 		TextInputBox((50, 500, 300, 35), (lightBlack, white, lightRed), "Splash:", textData={"alignText": "left"}, drawData={"header": None})
 
@@ -1782,7 +1761,7 @@ if __name__ == "__main__":
 			Button((755, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4]),
 			Button((755, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5]),
 			Button((755, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6])
-			], addToList=False)
+			])
 
 		c2 = Collection([
 			Label((865, 265, 140, 45), (lightBlack, white), text="Expandable Menu", textData={"fontSize": 17}, lists=[], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
@@ -1792,15 +1771,13 @@ if __name__ == "__main__":
 			Button((815, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
 			Button((815, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
 			Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1})
-			], addToList=False)
+			])
 
 		ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
 		ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
 
 		ProgressBar((900, 520, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
 		pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
-
-		# RadioButton((960, 260, 200, 200), (lightBlack, darkWhite), text="Radio Button", textData={"alignText": "top"})
 
 	CreateTests()
 
