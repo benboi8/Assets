@@ -33,9 +33,9 @@ class Func:
 		self.func = functionName
 		self.args = args
 		self.kwargs = kwargs
-		self.finished = False
 
 		# used with sequences
+		self.finished = False
 		self.delay = 0
 
 	def __call__(self, *args, **kwargs):
@@ -175,7 +175,7 @@ class Vec2:
 		a = p1.GetEuclideanDistance(p2) ** 2 + p1.GetEuclideanDistance(p3) ** 2 - p2.GetEuclideanDistance(p3) ** 2
 		b = 2 * p1.GetEuclideanDistance(p2) * p1.GetEuclideanDistance(p3)
 
-		angle = acos(a / b) * mult
+		angle = acos(min(a, b) / max(a, b)) * mult
 
 		if inDegrees:
 			return degrees(angle)
@@ -421,7 +421,7 @@ class Vec2:
 		return self.Copy()
 
 	def DirectionToPoint(self, pointOfDirection):
-		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
+		return Vec2((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])))
 
 	def Direction(self):
 		try:
@@ -446,6 +446,12 @@ class Vec2:
 		return self.GetEuclideanDistance(pos)
 	
 	def GetTDistance(self, pos):
+		return self.GetTaxicabDistance(pos)
+
+	def GetEDist(self, pos):
+		return self.GetEuclideanDistance(pos)
+	
+	def GetTDist(self, pos):
 		return self.GetTaxicabDistance(pos)
 
 	def Normalize(self):
@@ -486,7 +492,26 @@ class Vec2:
 			angle += (255 * (pi / 180))
 			angle *= -1
 		
-		return round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1]
+		# return Vec2(round(distanceToRotPoint * cos(angle) + distanceToRotPoint * sin(angle)) + pointOfRot[0], round(-distanceToRotPoint * sin(angle) + distanceToRotPoint * cos(angle)) + pointOfRot[1])
+
+		# untested
+		s = sin(angle)
+		c = cos(angle)
+
+		p = self.Copy()
+		cx = pointOfRot[0]
+		cy = pointOfRot[1]
+
+		p.x -= cx
+		p.y -= cy
+
+		xnew = p.x * c - p.y * s
+		ynew = p.x * s + p.y * c
+
+		p.x = xnew + cx
+		p.y = ynew + cy
+
+		return p
 
 	# check
 	def Heading(self, inDegrees=False):
@@ -744,7 +769,7 @@ class Vec3:
 	def MagnitudeSquared(self):
 		return (self.x ** 2) + (self.y ** 2) + (self.z ** 2)
 
-	def SetMagnitude(self):
+	def SetMagnitude(self, mag):
 		try:
 			return Vec3(self.x * mag / self.Magnitude(), self.y * mag / self.Magnitude(), self.z * mag / self.Magnitude())
 		except:
@@ -757,7 +782,7 @@ class Vec3:
 		return self.Copy()
 
 	def DirectionToPoint(self, pointOfDirection):
-		return ((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])), (pointOfDirection[2] - self.z) / max(0.00001, abs(pointOfDirection[2])))
+		return Vec3((pointOfDirection[0] - self.x) / max(0.00001, abs(pointOfDirection[0])), (pointOfDirection[1] - self.y) / max(0.00001, abs(pointOfDirection[1])), (pointOfDirection[2] - self.z) / max(0.00001, abs(pointOfDirection[2])))
 
 	def Direction(self):
 		try:
@@ -898,6 +923,198 @@ class Timer:
 		return (startTime, endTime, average)
 
 
+# WIP
+class Noise:
+	PERLIN_YWRAPB = 4
+	PERLIN_YWRAP = 1 << PERLIN_YWRAPB
+	PERLIN_ZWRAPB = 8
+	PERLIN_ZWRAP = 1 << PERLIN_ZWRAPB
+	# (2 ** n) - 1
+	# recommend to be minimum of (2 ** 11) - 1
+	# default 2047
+	PERLIN_SIZE = 2047
+	
+	# values above 0.5 will give noise values below 0
+	# lower values give darker results
+	# default 0.5
+	PERLIN_AMP_FALLOFF = 0.5
+	
+	perlin = None
+
+	def ScaledCosine(i):
+		# changing this formula to a constant can provide less smooth results
+		return 0.5 * (1.0 - cos(i * pi))
+
+	def PerlinNoise(x, y=0, z=0, octaves=4):
+		if Noise.perlin == None:
+			Noise.perlin = [random.random() for i in range(Noise.PERLIN_SIZE + 1)]
+
+		if x < 0:
+			x *= -1
+
+		if y < 0:
+			y *= -1
+
+		if z < 0:
+			z *= -1
+
+		xi = floor(x)
+		yi = floor(y)
+		zi = floor(z)
+
+		xf = x - xi
+		yf = y - yi
+		zf = z - zi
+
+		r = 0
+		ampl = 0.5
+
+		for o in range(octaves):
+			of = xi + (yi << Noise.PERLIN_YWRAPB) + (zi << Noise.PERLIN_ZWRAPB)
+
+			rxf = Noise.ScaledCosine(xf)
+			ryf = Noise.ScaledCosine(yf)
+
+			n1 = Noise.perlin[of & Noise.PERLIN_SIZE]
+			n1 += rxf * (Noise.perlin[(of + 1) & Noise.PERLIN_SIZE] - n1);
+			
+			n2 = Noise.perlin[(of + Noise.PERLIN_YWRAP) & Noise.PERLIN_SIZE];
+			n2 += rxf * (Noise.perlin[(of + Noise.PERLIN_YWRAP + 1) & Noise.PERLIN_SIZE] - n2);
+			
+			n1 += ryf * (n2 - n1);
+
+			of += Noise.PERLIN_ZWRAP;
+			n2 = Noise.perlin[of & Noise.PERLIN_SIZE];
+			n2 += rxf * (Noise.perlin[(of + 1) & Noise.PERLIN_SIZE] - n2);
+			n3 = Noise.perlin[(of + Noise.PERLIN_YWRAP) & Noise.PERLIN_SIZE];
+			n3 += rxf * (Noise.perlin[(of + Noise.PERLIN_YWRAP + 1) & Noise.PERLIN_SIZE] - n3);
+			n2 += ryf * (n3 - n2);
+
+			n1 += Noise.ScaledCosine(zf) * (n2 - n1)
+
+			r += n1 * ampl
+			ampl *= Noise.PERLIN_AMP_FALLOFF
+			xi <<= 1
+			xf *= 2
+			yi <<= 1
+			yf *= 2
+			zi <<= 1
+			zf *= 2
+
+			if xf >= 1.0:
+				xi += 1
+				xf -= 1
+			if yf >= 1.0:
+				yi += 1
+				yf -= 1
+			if zf >= 1.0:
+				zi += 1
+				zf -= 1
+
+		return r
+
+	def PerlinNoise2DRange(rect, x_scale, y_scale, z, octaves=4):
+		return Noise.PerlinTexture(rect[0], rect[1], x_scale, y_scale, z, (rect[2], rect[3]), octaves)				
+
+	def PerlinNoise3DRange(cube, octaves=4):
+		pass
+
+	def SetSeed(seed):
+
+		str_seed = str(seed)
+		seed = 0
+		for char in str_seed:
+			seed += ord(char)
+
+		Noise.Seed(seed)
+
+	def Seed(seed=None):
+		# Linear Congruential Generator
+		# Variant of Lehman Generator
+		class lcg:
+			# Set to values from http://en.wikipedia.org/wiki/Numerical_Recipes
+			# m is basically chosen to be large (as it is the max period)
+			# and for its relationships to a and c
+			m = 4294967296
+			# a - 1 should be divisible by m's prime factors
+			a = 1664525
+			# c and m should be co-prime
+			c = 1013904223
+
+			def setSeed(val):
+				# pick a random seed if val is undefined or null
+				# the >> 0 casts the seed to an unsigned 32-bit integer
+				lcg.z = lcg.seed = (int(random() * lcg.m) if val == None else val) >> 0
+
+			def rand():
+				# define the recurrence relationship 
+				lcg.z = (lcg.a * lcg.z + lcg.c) % lcg.m
+				# return a float in [0, 1]
+				# if z = m then z / m = 0 therefore (z % m) / m < 1 always
+				return lcg.z / lcg.m
+
+		lcg.setSeed(seed)
+		Noise.perlin = [0 for i in range(Noise.PERLIN_SIZE + 1)]
+		for i in range(Noise.PERLIN_SIZE + 1):
+			Noise.perlin[i] = lcg.rand()
+
+	def PerlinTexture(x, y, x_scale, y_scale, z, img_size, octaves=4):
+		texture = []
+		for i in range(img_size[0]):
+			texture.append([])
+			for j in range(img_size[1]):
+				texture[i].append(Noise.PerlinNoise((x / x_scale) + (i/ x_scale), (y / y_scale) + (j / y_scale), z, octaves=octaves))
+
+		return texture
+
+	def GetSurfaceFromTexture(texture):
+		surface = pg.Surface((len(texture[0]), len(texture)))
+		for y in range(surface.get_height()):
+			for x in range(surface.get_width()):
+				color = (texture[y][x] * 255, texture[y][x] * 255, texture[y][x] * 255)
+				surface.set_at((x, y), color)
+
+		return surface
+
+	def PerlinSurface(x, y, x_scale, y_scale, z, size, octaves=4):
+		surface = pg.Surface((size[0], size[1]))
+
+		for i in range(size[0]):
+			for j in range(size[1]):
+				c = Noise.PerlinNoise((x / x_scale) + (i / x_scale), (y / y_scale) + (j / y_scale), z, octaves=octaves) * 255
+				surface.set_at((i, j), (c, c, c))
+
+		return surface
+
+	# add files checks
+	
+	def SaveTexture(texture, file_name):
+		Noise.SaveSurface(Noise.GetSurfaceFromTexture(texture), file_name)
+
+	def SaveSurface(surface, file_name):
+		pg.image.save(surface, file_name)
+
+	def LoadSurface(file_name):
+		return pg.image.load(file_name)
+
+	def LoadTexture(file_name):
+		surface = Noise.LoadSurface(file_name)
+
+		texture = []
+		for x in range(surface.get_width()):
+			texture.append([])
+			for y in range(surface.get_height()):
+				color = surface.get_at((x, y))
+				texture[x].append((color[0] / 255, color[1] / 255, color[2] / 255))
+
+		return texture
+
+
+
+# add threading
+# P:\Python Projects\mp3 player\main.py
+
+
 def Lerp(v0, v1, t):
 	return v0 + t * (v1 - v0)
 
@@ -969,5 +1186,4 @@ def Map(value, start1, stop1, start2, stop2, withinBounds=True):
 
 
 if __name__ == "__main__":
-	n = 0.31
-	print(Map(n, 0, 1, 5, 20))
+	pass

@@ -32,6 +32,17 @@ class Image(Box):
 		else:
 			self.image = None
 
+	def Replace(self, colorA, colorB):
+
+		pixelArray = pg.PixelArray(self.image)
+		pixelArray.replace(colorA, colorB)
+
+		self.image = pixelArray.make_surface().convert_alpha()
+
+	def SetImage(self, imagePath):
+		self.imagePath = imagePath
+		self.ScaleImage(pg.image.load(self.imagePath) if self.imagePath != None else None, (self.rect.w, self.rect.h))
+
 
 class Cell:
 	def __init__(self, pos, size, color=red):
@@ -110,7 +121,222 @@ class CameraBase:
 
 # sound manager
 # P:\Python Projects\2d platformer
+# P:\Python Projects\mp3 player
 
+
+# animator 
+class Animation:
+	allAnimations = []
+
+	def SetColor(surface, colors):
+		# easier to crate different images with different colors instead
+		for color_pairs in colors:
+			colorA, colorB = color_pairs
+
+			pixelArray = pg.PixelArray(surface)
+			pixelArray.replace(colorA, colorB)
+
+			surface = pixelArray.make_surface().convert_alpha()
+
+		return surface
+
+	def __init__(self, rect, filePath, numOfFrames, fps=12, loop=False, autoPlay=False, reversable=False):
+		self.rect = pg.Rect(rect)
+
+		self.filePath = filePath
+
+		self.numOfFrames = numOfFrames
+		self.LoadImg()
+
+		self.fps = fps
+		self.loop = loop
+		self.autoPlay = autoPlay
+
+		self.reversable = reversable
+		self.reversed = False
+
+		self.updateFrame = Sequence(loop=True, autoDestroy=False, duration=self.numOfFrames, timeStep=(self.numOfFrames / FPS) * self.fps)
+
+		self.updateFrame.append(Func(self.IncrementFrame))
+
+		self.startFunc = None
+		self.stopFunc = None
+
+		Animation.allAnimations.append(self)
+
+		self.shouldDraw = True
+
+		if self.autoPlay:
+			self.updateFrame.Start()
+
+	def LoadImg(self, img=None):
+		self.fullImg = None
+		self.frames = []
+		self.currentFrame = None
+		if isinstance(self.filePath, (Image, pg.Surface)):
+			self.fullImg = self.filePath
+		else:
+			if CheckFileExists(self.filePath):
+				if img == None:
+					self.fullImg = pg.image.load(self.filePath)
+				else:
+					self.fullImg = img
+
+		if self.fullImg != None:
+			img_width, img_height = self.fullImg.get_width(), self.fullImg.get_height()
+
+			y = 0
+			frameHeight = img_height // self.numOfFrames
+
+			self.frames = [pg.transform.scale(self.fullImg.subsurface((0, y + (i * frameHeight), img_width, frameHeight)), (self.rect.w, self.rect.h)) for i in range(img_height // frameHeight)]
+			self.currentFrame = 0
+
+	def Draw(self):
+		if self.shouldDraw:
+			if self.fullImg != None:
+				screen.blit(self.frames[self.currentFrame], self.rect)
+				self.updateFrame.timeStep = (self.updateFrame.duration / clock.get_fps()) * self.fps if clock.get_fps() != 0 else 0
+				
+				self.updateFrame.Update()
+
+				if not self.loop:
+					if self.updateFrame.loopCount >= self.numOfFrames:
+						self.Stop()
+
+	def IncrementFrame(self):
+		if self.shouldDraw:
+			if self.reversed:
+				self.currentFrame -= 1
+				
+				if self.currentFrame < 0:
+					self.reversed = False
+					self.currentFrame = 0			
+
+			else:
+				self.currentFrame += 1
+
+				if self.currentFrame >= len(self.frames):
+					if self.reversable:
+						self.reversed = True
+						self.currentFrame = len(self.frames) - 1
+					else:
+						self.currentFrame = 0
+
+	def Start(self):
+		self.updateFrame.Start()
+		if self.startFunc != None:
+			if isinstance(self.startFunc, Sequence):
+				self.startFunc.Start()
+			else:
+				self.startFunc()
+
+	def Stop(self):
+		self.updateFrame.Stop()
+		if self.stopFunc != None:
+			if isinstance(self.stopFunc, Sequence):
+				self.stopFunc.Start()
+			else:
+				self.stopFunc()
+
+	def Show(self):
+		self.shouldDraw = True
+
+	def Hide(self):
+		self.shouldDraw = False
+
+	# expensive
+	def ChangeColor(self, colors):
+		self.fullImg = Animation.SetColor(self.fullImg, colors)
+		self.LoadImg(self.fullImg)
+
+
+
+class Animator:
+	allAnimators = []
+
+	def __init__(self, animations={}, active=[]):
+		self.animations = {}
+
+		for key in animations:
+			self.append(key, animations[key])
+
+		self.activeAnimations = []
+
+		for key in active:
+			if key in self.animations:
+				self.activeAnimations.append(self.animations[key])
+
+		self.previousAnimation = None
+
+		Animator.allAnimators.append(self)
+
+	def __str__(self):
+		return f"allAnimations: {len(self.animations)}, activeAnimations: {len(self.activeAnimations)}"
+
+	def Draw(self):
+		for animation in self.activeAnimations:
+			animation.Draw()
+
+	def append(self, key, animation):
+		if type(animation) == Animation:
+			
+			animation.stopFunc = Func(self.RemoveActive, key)
+			
+			animation.startFunc = Func(self.AddActive, key)
+
+			self.animations[key] = animation
+		else:
+			raise TypeError(f"Animation is not of type {Animation}")
+
+	def remove(self, key):
+		if key in self.animations:
+			self.animations.pop(key)
+		else:
+			raise ValueError("Key not in dict")
+
+	def UpdatePos(self, pos):
+		for key in self.animations:
+			self.animations[key].rect.x = pos[0]
+			self.animations[key].rect.y = pos[1]
+
+	def UpdateSize(self, size):
+		pass
+
+	def AddActive(self, key, onStop=None):
+		if key in self.animations:
+			if self.animations[key] not in self.activeAnimations:
+				self.activeAnimations.append(self.animations[key])
+				self.animations[key].Start()
+
+				if onStop != None:
+					self.animations[key].stopFunc = Sequence(Func(self.RemoveActive, key), Func(self.AddActive, onStop))
+
+	def RemoveActive(self, key):
+		if key in self.animations:
+			if self.animations[key] in self.activeAnimations:
+				self.activeAnimations.remove(self.animations[key])
+				self.animations[key].Stop()
+				self.previousAnimation = key
+
+	def RemoveAll(self):
+		self.previousAnimation = None
+		if len(self.activeAnimations) > 0:
+			for animation in self.activeAnimations:
+				animation.Stop()
+
+			for key in self.animations:
+				if self.animations[key] == animation:
+					self.previousAnimation = key
+
+		self.activeAnimations = []
+
+	def StartActiveAnimations(self):
+		for animation in self.activeAnimations:
+			animation.Start()
+
+	def StopActiveAnimations(self):
+		for animation in self.activeAnimations:
+			animation.Stop()
 
 
 # particle system
@@ -139,14 +365,15 @@ class ParticleSystem:
 		def LoadImg(img_paths, color, radius):
 			img_textures = []
 			for color, img_path in img_paths:
-				if not CheckFileExists(img_path.split("/")[-1], img_path[0:len(img_path.split("/")[-1])]):
+				if CheckFileExists(img_path):
 					img = pg.image.load(img_path).convert_alpha()
 					img_texture = pg.transform.smoothscale(img, (radius * 2, radius * 2))
 
-					for x in range(img_texture.get_width()):
-						for y in range(img_texture.get_height()):
-							img_color = img_texture.get_at((x, y))
-							img_texture.set_at((x, y), (color[0], color[1], color[2], img_color[3]))
+					if color != None:
+						for x in range(img_texture.get_width()):
+							for y in range(img_texture.get_height()):
+								img_color = img_texture.get_at((x, y))
+								img_texture.set_at((x, y), (color[0], color[1], color[2], img_color[3]))
 
 					img_textures.append(img_texture)
 
@@ -183,13 +410,13 @@ class ParticleSystem:
 				screen.blit(self.img_texture, (self.x - self.radius, self.y - self.radius))	
 
 		def ApplyForce(self, force):
-			self.acceleration = self.acceleration.Add(force)
+			self.acceleration = self.acceleration + force
 
 		def Update(self):
-			self.velocity = self.velocity.Add(self.acceleration)
-			pos = self.Add(self.velocity)
+			self.velocity = self.velocity + self.acceleration
+			pos = self + self.velocity
 			self.x, self.y = pos.x, pos.y
-			self.acceleration = Vec2(0, 0, lists=[])
+			self.acceleration = Vec2(0, 0)
 
 			if self.lifeTime != -1:
 				self.lifeTime -= self.lifeReduction
@@ -225,7 +452,7 @@ class ParticleSystem:
 				if isinstance(force, str):
 					force = self.ConvertStringToRandom(force)	
 
-				self.ApplyForce(force)
+				self.ApplyForce(force * Map(self.lifeTime, 0, 255, 1, 0))
 
 			self.ApplyForce(self.gravity)
 
@@ -358,10 +585,10 @@ if __name__ == "__main__":
 		for emitter in ParticleSystem.allEmitters:
 			emitter.HandleEvent(event)
 
-	ParticleSystem.Emitter(width // 2 - 25, height - 40, emission_area=(50, 10), particle_bounceloss=(1, 1), particle_startVelocity="random:0,0,0,0",
-	 particle_gravity=Vec2(0, -0.15), particle_life_reduction=3, particle_paths=[(LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_1.png"),
-	  (LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_2.png")], particle_externalForces=["random:0,0.2,0,0"])
-
+	ParticleSystem.Emitter(width // 2 - 25, height - 40, emission_area=(50, 10), particle_bounceloss=(1, 1), particle_startVelocity="random:-0.5,0.5,-3,-2",
+	 particle_gravity=Vec2(0, 0), particle_life_reduction=1, particle_paths=[(LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_1.png"),
+	  (LerpColor((45, 51, 46), white, 0.3), "textures/particles/smoke_2.png")], particle_externalForces=[Vec2(0.04, 0)])
+	
 	def Update():
 		for particle in ParticleSystem.allParticles:
 			particle.ApplyForces()

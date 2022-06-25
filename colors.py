@@ -96,7 +96,10 @@ class Color(tuple):
 		return self.r == c.r and self.g == c.g and self.b == c.b
 
 	def __ne__(self, c):
-		return self.r != c.r or self.g != c.g or self.b != c.b
+		if isinstance(c, tuple):
+			return self.r != c.r or self.g != c.g or self.b != c.b
+		else:
+			return False
 
 	def __dir__(self):
 		return {"red": self.r, "green": self.g, "blue": self.b, "alpha": self.a, "type": type(self)}
@@ -133,7 +136,7 @@ class Color(tuple):
 		return self.AsHex
 	
 
-def RandomColor(minR = 0, minG = 0, minB = 0, maxR = 255, maxG = 255, maxB = 255):
+def RandomColor(minR = 0, maxR = 255, minG = 0, maxG = 255, minB = 255, maxB = 255):
 	return (randint(minR, maxR), randint(minG, maxG), randint(minB, maxB))\
 
 def LerpColorElement(minColorElement, maxColorElement, t):

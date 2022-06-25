@@ -5,7 +5,7 @@
 # sys.path.insert(1, "P://Python Projects/assets/")
 
 # from GUI import *
-
+# from colors import Color
 
 
 # def DrawLoop():
@@ -32,6 +32,12 @@
 # 		HandleEvents(event)
 
 # 	DrawLoop()
+
+
+
+# add correct loading order for kwargs
+# add update functions for color, text, textColor, textSize, textFont, rect
+# add functions to change window propteries like title and icon
 
 
 from General import *
@@ -66,7 +72,6 @@ allHyperLinks = []
 allSwitches = []
 allMultiselectButtons = []
 allProgressBars = []
-allRadioButtons = []
 
 allCollections = []
 allExpandableMenus = []
@@ -358,7 +363,7 @@ class Point(Vec2):
 
 
 class Line:
-	def __init__(self, startPos, endPos, color, startPointRadius=3, endPointRadius=3, aa=False, name="", surface=screen, lists=[lines]):
+	def __init__(self, startPos, endPos, color, startPointRadius=0, endPointRadius=0, aa=False, name="", surface=screen, lists=[lines]):
 		self.start = Point(startPos[0], startPos[1], color, startPointRadius, surface, lists=[])
 		self.end = Point(endPos[0], endPos[1], color, endPointRadius, surface, lists=[])
 		self.name = name
@@ -505,7 +510,7 @@ class Polygon:
 
 
 class Box:
-	def __init__(self, rect, colors, name="", surface=screen, drawData={}, lists=[allBoxs]):
+	def __init__(self, rect, colors, name="", surface=screen, drawData={}, lists=[allBoxs], **kwargs):
 		self.rect = pg.Rect(rect)
 		self.backgroundColor = colors[0]
 		self.borderColor = colors[1]
@@ -518,9 +523,12 @@ class Box:
 		self.drawBorder = drawData.get("drawBorder", True)
 		self.drawBackground = drawData.get("drawBackground", True)
 		self.roundedCorners = drawData.get("roundedCorners", False)
-		self.borderWidth = drawData.get("borderWidth", 1 if self.roundedCorners else 2)
+		self.borderWidth = drawData.get("borderWidth", 1 if self.roundedCorners else 1)
 		self.roundness = drawData.get("roundness", 4)
 		self.activeCorners = drawData.get("activeCorners", {})
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 		AddToListOrDict(lists, self)
 
@@ -543,10 +551,13 @@ class Box:
 
 	def UpdateRect(self, rect):
 		self.rect = pg.Rect(rect)
+	
+	def MoveY(self, y_diff):
+		self.rect.y += y_diff
 
 
 class Label(Box):
-	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, lists=[allLabels]):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, lists=[allLabels], **kwargs):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
 		self.text = str(text)
@@ -558,6 +569,9 @@ class Label(Box):
 
 		self.scrollLevel = 0
 		self.minWidth, self.minHeight = self.rect.w, self.rect.h
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 		self.CreateTextObjects()
 
@@ -639,9 +653,14 @@ class Label(Box):
 		self.rect = pg.Rect(rect)
 		self.UpdateText(self.text)
 
+	def MoveY(self, y_diff):
+		self.rect.y += y_diff
+		for textObj in self.textObjs:
+			textObj[1].y += y_diff
+
 
 class Hint(Label):
-	def __init__(self, rect, colors, parent, text="", delay=60000, name="", surface=screen, drawData={}, textData={}):
+	def __init__(self, rect, colors, parent, text="", delay=60000, name="", surface=screen, drawData={}, textData={}, **kwargs):
 		"""Delay: In microseconds, max of 1 minute"""
 
 		super().__init__(rect, colors, text, name, surface, drawData, textData, [])
@@ -651,6 +670,9 @@ class Hint(Label):
 		self.startTime = dt.datetime.now()
 		self.hasStartTimeUpdated = False
 		self.showHint = False
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def Draw(self):
 		if not self.disabled:
@@ -679,8 +701,9 @@ class Hint(Label):
 				self.DrawText()
 
 
+# add on close and on open functions
 class TextInputBox(Label):
-	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs]):
+	def __init__(self, rect, colors, splashText="Type here:", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allTextBoxs], **kwargs):
 		self.splashText = splashText
 		super().__init__(rect, colors, self.splashText, name, surface, drawData, textData, lists)
 		self.ogBackgroundColor = self.backgroundColor
@@ -723,6 +746,9 @@ class TextInputBox(Label):
 
 		self.t = 0
 		self.step = 0.05
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def MakeHeader(self):
 		self.headerTextSurface = self.font.render(self.header, True, self.headerFontColor)
@@ -932,7 +958,7 @@ class TextInputBox(Label):
 
 
 class Button(Label):
-	def __init__(self, rect, colors, onClick=None, onClickArgs=[], text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons], onRelease=None, onReleaseArgs=[]):
+	def __init__(self, rect, colors, onClick=None, onClickArgs=[], text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allButtons], onRelease=None, onReleaseArgs=[], **kwargs):
 		super().__init__(rect, colors, text, name, surface, drawData, textData, lists)
 
 		self.onClick = onClick
@@ -959,6 +985,9 @@ class Button(Label):
 
 		self.t = 0
 		self.step = 0.05
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def Draw(self):
 		if not self.disabled:
@@ -1046,13 +1075,14 @@ class Button(Label):
 
 # slider - value change button rect function - test
 class Slider(Label):
-	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders]):
+	def __init__(self, rect, colors, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, lists=[allSliders], **kwargs):
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, lists=lists)
 
 		self.isVertical = inputData.get("isVertical", True if self.rect.w < self.rect.h else False)
 		self.startingValue = inputData.get("startingValue", 0)
 		self.onValueChange = inputData.get("onValueChange", None)
 		self.sliderButtonSize = drawData.get("sliderButtonSize", [self.rect.w / 10, self.rect.h] if not self.isVertical else [self.rect.w, self.rect.h / 10])
+		self.showValue = drawData.get("showValue", False)
 
 		self.buttonData = buttonData
 
@@ -1062,8 +1092,11 @@ class Slider(Label):
 
 		self.header = drawData.get("header", False)
 
-		if type(self.header) == str:
+		if isinstance(self.header, str):
 			self.MakeHeader()
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 		self.CreateSliderButton()
 
@@ -1083,7 +1116,12 @@ class Slider(Label):
 		else:
 			rect = pg.Rect(self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.sliderButtonSize[0], self.sliderButtonSize[1] - self.borderWidth * 2)
 
-		self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.borderColor), self.buttonData.get("activeColor", InvertColor(self.borderColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		if isinstance(self.buttonData, dict): 
+			self.sliderButton = Button(rect, (self.buttonData.get("backgroundColor", self.backgroundColor), self.buttonData.get("inactiveColor", self.borderColor), self.buttonData.get("activeColor", InvertColor(self.borderColor))), onClick=self.GetMousePos, text=self.buttonData.get("text", ""), name=f"{self.name}'s sliderButton", surface=self.surface, drawData=self.buttonData.get("drawData", self.drawData), textData=self.buttonData.get("textData", {}), inputData=self.buttonData.get("inputData", {}), lists=[])
+		elif isinstance(self.buttonData, Button):
+			self.sliderButton = self.buttonData
+			self.sliderButton.onClick = self.GetMousePos
+
 		self.SetValue(self.startingValue)
 
 	def GetMousePos(self):
@@ -1093,7 +1131,13 @@ class Slider(Label):
 	def Draw(self):
 		self.DrawBackground()
 		self.DrawBorder()
-
+		
+		if self.showValue:
+			if not self.roundedCorners:
+				pg.draw.rect(self.surface, self.sliderButton.inactiveColor, (self.rect.x, self.rect.y, self.GetValue() * self.rect.w + self.sliderButton.rect.w // 2, self.rect.h))
+			else:
+				DrawRoundedRect((self.rect.x, self.rect.y, self.GetValue() * self.rect.w + self.sliderButton.rect.w // 2, self.rect.h), (self.sliderButton.inactiveColor, self.sliderButton.inactiveColor), self.roundness, self.borderWidth, self.activeCorners, self.surface)
+		
 		self.sliderButton.Draw()
 
 		if type(self.header) == str:
@@ -1119,7 +1163,7 @@ class Slider(Label):
 
 	def GetValue(self, n=3):
 		if not self.isVertical:
-			self.value = round((self.sliderButton.rect.x - self.rect.x - self.borderWidth) / (self.rect.w - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
+			self.value = round((self.sliderButton.rect.x - self.rect.x - self.borderWidth) / (self.rect.w - (self.borderWidth * 2) - self.sliderButton.rect.w), n)
 		else:
 			self.value = round((self.sliderButton.rect.y - self.rect.y - self.borderWidth) / (self.rect.h - (self.borderWidth * 2) - self.sliderButton.rect.h), n)
 
@@ -1141,12 +1185,15 @@ class Slider(Label):
 
 
 class ScollBar(Slider):
-	def __init__(self, rect, colors, scrollObj, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, keyBinds={}, lists=[allScrollBars]):
+	def __init__(self, rect, colors, scrollObj, name="", surface=screen, drawData={}, textData={}, inputData={}, buttonData={}, keyBinds={}, lists=[allScrollBars], **kwargs):
 		self.scrollObj = scrollObj
 		super().__init__(rect, colors, name=name, surface=surface, drawData=drawData, textData=textData, inputData=inputData, buttonData=buttonData, lists=lists)
 
 		self.keyBinds = keyBinds
 		self.scrollObj = scrollObj
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def HandleEvent(self, event):
 		self.sliderButton.HandleEvent(event)
@@ -1208,7 +1255,7 @@ class ScollBar(Slider):
 
 
 class ProgressBar(Box):
-	def __init__(self, rect, colors, text="", name="", surface=screen, value=0, drawData={}, textData={}, headerData={}, lists=[allProgressBars]):
+	def __init__(self, rect, colors, text="", name="", surface=screen, value=0, drawData={}, textData={}, headerData={}, lists=[allProgressBars], **kwargs):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
 		if headerData.get("enableHeader", True):
@@ -1221,6 +1268,9 @@ class ProgressBar(Box):
 		self.bar = Box((self.rect.x + self.borderWidth, self.rect.y + self.borderWidth, self.rect.w * self.value - self.borderWidth * 2, self.rect.h - self.borderWidth * 2), (colors[2], colors[2]), drawData=drawData, lists=[])
 
 		self.ChangeValue(value)
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def Draw(self):
 		self.DrawBackground()
@@ -1237,7 +1287,7 @@ class ProgressBar(Box):
 
 
 class MessageBox(Label):
-	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs]):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={"alignText": "center-top"}, inputData={}, messageBoxData={}, confirmButtonData={}, cancelButtonData={}, lists=[allMessageBoxs], **kwargs):
 		super().__init__(rect, colors, text=text, name=name, surface=screen, drawData=drawData, textData=textData, lists=lists)
 
 		confirmButtonSize = confirmButtonData.get("size", (self.rect.w / 3, self.rect.h / 6))
@@ -1257,6 +1307,9 @@ class MessageBox(Label):
 		messageBoxButtonRect = messageBoxData.get("rect", (self.rect.x + 10, self.rect.y + (self.textHeight * len(self.textObjs)) + 10, self.rect.w - 20, self.rect.h - (self.textHeight * len(self.textObjs)) * 2 - confirmButtonSize[1]))
 		self.messageBox = Label(messageBoxButtonRect, messageBoxButtonColors, text = messageBoxData.get("text", "Message box"), name=messageBoxData.get("name", f"{self.name}-messageBox"), surface=self.surface, drawData=drawData, textData=messageBoxButtonTextData, lists=[])
 
+		for key, item in kwargs.items():
+			setattr(self, key, item)
+
 	def Draw(self):
 		self.DrawBackground()
 		self.DrawBorder()
@@ -1272,15 +1325,18 @@ class MessageBox(Label):
 
 
 class HyperLink(Button):
-	def __init__(self, rect, colors, url, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allHyperLinks]):
+	def __init__(self, rect, colors, url, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allHyperLinks], **kwargs):
 		super().__init__(rect, colors, self.OpenLink, [url], text if text != "" else url, name, surface, drawData, textData, inputData, lists)
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def OpenLink(self, url):
 		webbrowser.open(url, new=2, autoraise=True)
 
 
 class Switch(Box):
-	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allSwitches]):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, inputData={}, lists=[allSwitches], **kwargs):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
 		self.firstChoiceColor = colors[2]
@@ -1297,6 +1353,9 @@ class Switch(Box):
 		self.lastChoice = Button((self.rect.x + self.rect.w // 2, self.rect.y, self.rect.w // 2, self.rect.h), (self.backgroundColor, self.borderColor, self.lastChoiceColor), text=inputData.get("lastChoiceText", ""), name=f"{self.name}_lastChoice", surface=self.surface, drawData=drawData, textData=TD, lists=[])
 
 		self.activeChoice = self.firstChoice
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def HandleEvent(self, event):
 		self.firstChoice.HandleEvent(event)
@@ -1333,7 +1392,7 @@ class Switch(Box):
 
 
 class MultiselectButton(Label):
-	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, optionData={}, lists=[allMultiselectButtons]):
+	def __init__(self, rect, colors, text="", name="", surface=screen, drawData={}, textData={}, optionData={}, lists=[allMultiselectButtons], **kwargs):
 		try:
 			if "-" in textData["alignText"]:
 				textData["alignText"] = textData["alignText"].split("-")[0] + "-top"
@@ -1361,6 +1420,9 @@ class MultiselectButton(Label):
 		self.CreateOptions()
 
 		self.activeSelection = self.options[optionData.get("activeSelection", self.startActiveOption)] if not self.allowNoSelection else None
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
 
 	def CreateOptions(self):
 		self.options = []
@@ -1416,11 +1478,17 @@ class Collection:
 
 		AddToListOrDict(lists, self)
 
+	def __len__(self):
+		return len(self.objects)
+
+	def __getitem__(self, i):
+		return self.objects[i]
+
 	def Add(self, obj):
 		self.objects.append(obj)
 
 	def append(self, obj):
-		self.Add(obj)
+		self.objects.append(obj)
 
 	def remove(self, obj):
 		if obj in self.objects:
@@ -1437,7 +1505,7 @@ class Collection:
 
 
 class ExpandableMenu(Box):
-	def __init__(self, rect, colors, openButton=None, name="", surface=screen, drawData={}, textData={}, inputData={}, closedData={}, openData={}, options=Collection(), lists=[allExpandableMenus]):
+	def __init__(self, rect, colors, openButton=None, name="", surface=screen, drawData={}, textData={}, inputData={}, closedData={}, openData={}, options=Collection(), lists=[allExpandableMenus], **kwargs):
 		super().__init__(rect, colors, name, surface, drawData, lists)
 
 		self.openRect = pg.Rect(rect)
@@ -1448,19 +1516,28 @@ class ExpandableMenu(Box):
 
 		self.rect = self.closedRect
 
+		self.openText = "Open"
+		self.closeText = "Close"
+
 		if type(openButton) == dict:
-			self.openButton = Button(openButton.get("rect", (self.rect.x + 5, self.rect.y + 5, 45, 45)), openButton.get("colors", (colors)), self.ToggleMenu, [], openButton.get("text", "Open"), openButton.get("name", f"{name if name != '' else 'expandleMenu'}-toggleButton"), openButton.get("surface", surface), openButton.get("drawData", drawData), openButton.get("textData", textData), openButton.get("inputData", inputData), [])
+			self.openButton = Button(openButton.get("rect", (self.rect.x + 5, self.rect.y + 5, 45, 45)), openButton.get("colors", (colors)), self.ToggleMenu, [], openButton.get("text", self.closeText), openButton.get("name", f"{name if name != '' else 'expandleMenu'}-toggleButton"), openButton.get("surface", surface), openButton.get("drawData", drawData), openButton.get("textData", textData), openButton.get("inputData", inputData), [])
 		elif type(openButton) == Button:
 			self.openButton = openButton
 			self.openButton.onClick = self.ToggleMenu
 		else:
 			textData["fontSize"] = 15
-			self.openButton = Button((self.rect.x + 5, self.rect.y + 5, 45, 45), colors, self.ToggleMenu, [], "Open", f"{name if name != '' else 'expandleMenu'}-toggleButton", surface, drawData, textData, inputData, [])
+			self.openButton = Button((self.rect.x + 5, self.rect.y + 5, 45, 45), colors, self.ToggleMenu, [], self.openText, f"{name if name != '' else 'expandleMenu'}-toggleButton", surface, drawData, textData, inputData, [])
 
 		self.opened = False
 		self.options = options
 
+		self.scrollLevel = 0
+
+		for key, item in kwargs.items():
+			setattr(self, key, item)
+
 	def ToggleMenu(self):
+		self.scrollObj = 0
 		self.opened = not self.opened
 
 		if self.opened:
@@ -1472,7 +1549,7 @@ class ExpandableMenu(Box):
 			if self.roundedCorners:
 				self.roundness = self.closedData.get("roundness", self.roundness)
 		
-		self.openButton.UpdateText("Open" if not self.opened else "Close")
+		self.openButton.UpdateText(self.openText if not self.opened else self.closeText)
 
 	def Draw(self):
 		self.DrawBackground()
@@ -1481,13 +1558,62 @@ class ExpandableMenu(Box):
 		self.openButton.Draw()
 
 		if self.opened:
-			self.options.Draw()
+			for option in self.options.objects:
+				if isinstance(option, Collection):
+					for obj in option:
+						og_rect = obj.rect.copy()
+						new_rect = pg.Rect(obj.rect.x, obj.rect.y - ((obj.rect.h + 5) * self.scrollLevel), obj.rect.w, obj.rect.h)
+						if self.rect.contains(new_rect):
+							obj.UpdateRect(new_rect)
+							obj.Draw()
+							obj.UpdateRect(og_rect)
+				else:
+					og_rect = option.rect.copy()
+					new_rect = pg.Rect(option.rect.x, option.rect.y - ((option.rect.h + 5) * self.scrollLevel), option.rect.w, option.rect.h)
+					if self.rect.contains(new_rect):
+						option.UpdateRect(new_rect)
+						option.Draw()
+						option.UpdateRect(og_rect)
 
 	def HandleEvent(self, event):
 		self.openButton.HandleEvent(event)
 
 		if self.opened:
-			self.options.HandleEvent(event)
+			if len(self.options) > 0:
+				if event.type == pg.MOUSEBUTTONDOWN:
+					if self.rect.collidepoint(pg.mouse.get_pos()):
+						# down
+						if event.button == 5:
+							if isinstance(self.options[0], Collection):
+								if len(self.options[0]) > 0:
+									if self.scrollLevel + 1 <= len(self.options) - (self.rect.h // self.options[0][0].rect.h // 1.2):
+										self.scrollLevel += 1
+							else:
+								if self.scrollLevel + 1 <= len(self.options) - (self.rect.h // self.options[0].rect.h // 1.2):
+									self.scrollLevel += 1
+						
+						# up
+						if event.button == 4:
+							if self.scrollLevel - 1 >= 0:
+								self.scrollLevel -= 1
+
+
+			for option in self.options.objects:
+				if isinstance(option, Collection):
+					for obj in option:
+						og_rect = obj.rect.copy()
+						new_rect = pg.Rect(obj.rect.x, obj.rect.y - ((obj.rect.h + 5) * self.scrollLevel), obj.rect.w, obj.rect.h)
+						if self.rect.contains(new_rect) and hasattr(option, "HandleEvent"):
+							obj.UpdateRect(new_rect)
+							obj.HandleEvent(event)
+							obj.UpdateRect(og_rect)
+				else:
+					og_rect = option.rect.copy()
+					new_rect = pg.Rect(option.rect.x, option.rect.y - ((option.rect.h + 5) * self.scrollLevel), option.rect.w, option.rect.h)
+					if self.rect.contains(new_rect):
+						option.UpdateRect(new_rect)
+						option.Draw()
+						option.UpdateRect(og_rect)
 
 
 def DrawAllGUIObjects():
@@ -1603,14 +1729,6 @@ def DrawAllGUIObjects():
 		for obj in allProgressBars:
 			obj.Draw()
 
-	if type(allRadioButtons) == dict:
-		for key in allRadioButtons:
-			allRadioButtons[key].Draw()
-
-	elif type(allRadioButtons) == list:
-		for obj in allRadioButtons:
-			obj.Draw()
-
 	if type(allCollections) == dict:
 		for key in allCollections:
 			allCollections[key].Draw()
@@ -1685,14 +1803,6 @@ def HandleGui(event):
 		for obj in allMultiselectButtons:
 			obj.HandleEvent(event)
 
-	if type(allRadioButtons) == dict:
-		for key in allRadioButtons:
-			allRadioButtons[key].Draw()
-
-	elif type(allRadioButtons) == list:
-		for obj in allRadioButtons:
-			obj.Draw()
-
 	if type(allCollections) == dict:
 		for key in allCollections:
 			allCollections[key].HandleEvent(event)
@@ -1706,7 +1816,6 @@ def HandleGui(event):
 	else:
 		for obj in allExpandableMenus:
 			obj.HandleEvent(event)
-
 
 
 if __name__ == "__main__":
@@ -1770,17 +1879,20 @@ if __name__ == "__main__":
 			Button((815, 425, 190, 50), (lightBlack, white, lightRed), text="Button 3", lists=[], onClick=print, onClickArgs=[3], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
 			Button((815, 480, 190, 50), (lightBlack, white, lightRed), text="Button 4", lists=[], onClick=print, onClickArgs=[4], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
 			Button((815, 535, 190, 50), (lightBlack, white, lightRed), text="Button 5", lists=[], onClick=print, onClickArgs=[5], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
-			Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1})
+			Button((815, 590, 190, 50), (lightBlack, white, lightRed), text="Button 6", lists=[], onClick=print, onClickArgs=[6], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 645, 190, 50), (lightBlack, white, lightRed), text="Button 7", lists=[], onClick=print, onClickArgs=[7], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 700, 190, 50), (lightBlack, white, lightRed), text="Button 8", lists=[], onClick=print, onClickArgs=[8], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
+			Button((815, 755, 190, 50), (lightBlack, white, lightRed), text="Button 9", lists=[], onClick=print, onClickArgs=[9], drawData={"roundedCorners": True, "roundness": 5, "borderWidth": 1}),
 			])
 
 		ExpandableMenu((750, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c1)
-		ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
+		epm1 = ExpandableMenu((810, 260, 200, 385), (lightBlack, darkWhite, lightRed), options=c2, drawData={"roundedCorners": True, "roundness": 5}, closedData={"roundness": 5}, openData={"roundness": 20}, openButton={"drawData": {"roundedCorners": True, "roundness": 5, "borderWidth": 1}})
 
 		ProgressBar((900, 520, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", value=0.7)
 		pb2 = ProgressBar((900, 600, 200, 35), (lightBlack, darkWhite, lightRed), text="Progress", drawData={"roundedCorners": True, "roundness": 3}, value=0.2)
 
 	CreateTests()
-
+	
 
 	while RUNNING:
 		clock.tick_busy_loop(FPS)

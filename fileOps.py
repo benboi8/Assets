@@ -204,7 +204,7 @@ def OpenFile(fileName):
 		print(f"Failed to load. No folder with name '{folder}'.")
 		return False
 
-	if not CheckFileExists(fileName + fileType, folder):
+	if not CheckFileExists(folder + fileName + fileType):
 		print(f"Failed to load. No file with name '{fileName + fileType}' in folder '{folder}'.")
 		return False
 
